@@ -1,23 +1,20 @@
-// ── 캔버스 해상도 ──
 const W = 1280, H = 720;
+const SHEAR = 0.25; // 기울임 각도 (약 14도)
 
-// ── 템플릿 로드 ──
 const params   = new URLSearchParams(location.search);
 const tmplId   = params.get('id') || (TEMPLATES[0] && TEMPLATES[0].id);
 const template = TEMPLATES.find(t => t.id === tmplId) || TEMPLATES[0];
 
-// ── 상태 ──
-let bgImage    = null;
+let bgImage     = null;
 let personImage = null;
-let selected   = null;   // 'title' | 'subtitle' | 'person' | null
-let isDragging = false;
-let dragOffX   = 0, dragOffY = 0;
+let selected    = null;
+let isDragging  = false;
+let dragOffX    = 0, dragOffY = 0;
+let state       = null;
 
-let state = null;
-
-// ── DOM ──
-const canvas         = document.getElementById('canvas');
-const ctx            = canvas.getContext('2d');
+// DOM
+const canvas    = document.getElementById('canvas');
+const ctx       = canvas.getContext('2d');
 
 const bgFile         = document.getElementById('bg-file');
 const bgUploadZone   = document.getElementById('bg-upload-zone');
@@ -39,14 +36,14 @@ const personControls   = document.getElementById('person-controls');
 const personSizeSlider = document.getElementById('person-size');
 const personSizeVal    = document.getElementById('person-size-val');
 
-const inputTitle    = document.getElementById('input-title');
-const inputSub      = document.getElementById('input-sub');
+const inputTitle     = document.getElementById('input-title');
+const inputSub       = document.getElementById('input-sub');
 const titleSizeSlider = document.getElementById('title-size');
-const titleSizeVal  = document.getElementById('title-size-val');
-const subSizeSlider = document.getElementById('sub-size');
-const subSizeVal    = document.getElementById('sub-size-val');
+const titleSizeVal   = document.getElementById('title-size-val');
+const subSizeSlider  = document.getElementById('sub-size');
+const subSizeVal     = document.getElementById('sub-size-val');
 
-// ── 초기화 ──
+// ── 초기화 ──────────────────────────────────────────────
 function init() {
   document.getElementById('template-name').textContent = template.name;
   const d = template.defaults;
@@ -54,17 +51,16 @@ function init() {
   state = {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
+    font:    d.font    || 'Noto Sans KR',
     person:  { ...d.person },
-    font:    d.font || 'Black Han Sans',
-    title:   { color: '#ffffff', strokeWidth: 5, strokeColor: '#000000', italic: false, text: '', ...d.title },
-    subtitle:{ color: '#ffffff', strokeWidth: 3, strokeColor: '#000000', italic: false, text: '', ...d.subtitle },
+    title:   { color: '#ffffff', strokeWidth: 14, strokeColor: '#000000', italic: false, text: '', ...d.title },
+    subtitle:{ color: '#ffffff', strokeWidth: 6,  strokeColor: '#000000', italic: false, text: '', ...d.subtitle },
   };
 
-  // UI 초기값 동기화
+  // UI 동기화
   bgColorInput.value     = state.bgColor;
   bgColorVal.textContent = state.bgColor.toUpperCase();
 
-  // bgMode 탭 표시
   if (state.bgMode === 'color') {
     document.querySelector('.tab[data-tab="color"]').classList.add('active');
     document.querySelector('.tab[data-tab="image"]').classList.remove('active');
@@ -72,17 +68,21 @@ function init() {
     document.getElementById('bg-color-panel').classList.remove('hidden');
   }
 
-  titleSizeSlider.value     = state.title.fontSize;
-  titleSizeVal.textContent  = state.title.fontSize;
-  subSizeSlider.value       = state.subtitle.fontSize;
-  subSizeVal.textContent    = state.subtitle.fontSize;
+  titleSizeSlider.value    = state.title.fontSize;
+  titleSizeVal.textContent = state.title.fontSize;
+  subSizeSlider.value      = state.subtitle.fontSize;
+  subSizeVal.textContent   = state.subtitle.fontSize;
 
   document.getElementById('title-stroke-size').value          = state.title.strokeWidth;
   document.getElementById('title-stroke-size-val').textContent = state.title.strokeWidth;
-  document.getElementById('sub-stroke-size').value             = state.subtitle.strokeWidth;
-  document.getElementById('sub-stroke-size-val').textContent   = state.subtitle.strokeWidth;
+  document.getElementById('title-stroke-color').value         = state.title.strokeColor;
+  document.getElementById('sub-stroke-size').value            = state.subtitle.strokeWidth;
+  document.getElementById('sub-stroke-size-val').textContent  = state.subtitle.strokeWidth;
+  document.getElementById('sub-stroke-color').value           = state.subtitle.strokeColor;
   document.getElementById('title-italic').checked = state.title.italic;
   document.getElementById('sub-italic').checked   = state.subtitle.italic;
+  document.getElementById('title-color').value    = state.title.color;
+  document.getElementById('sub-color').value      = state.subtitle.color;
 
   inputTitle.value = state.title.text;
   inputSub.value   = state.subtitle.text;
@@ -91,42 +91,82 @@ function init() {
   document.fonts.ready.then(() => render());
 }
 
-// ── 렌더링 ──
+// ── 렌더링 유틸 ─────────────────────────────────────────
+function buildFont(size) {
+  const noWeight = ['Jua', 'Do Hyeon'];
+  if (noWeight.includes(state.font)) return `${size}px '${state.font}', sans-serif`;
+  return `900 ${size}px '${state.font}', sans-serif`;
+}
+
+function drawCover(c, img, w, h) {
+  const ir = img.width / img.height, cr = w / h;
+  let sw, sh, sx, sy;
+  if (ir > cr) { sh = img.height; sw = sh * cr; sx = (img.width - sw) / 2; sy = 0; }
+  else          { sw = img.width;  sh = sw / cr; sx = 0; sy = (img.height - sh) / 2; }
+  c.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+function drawOutline(c, text, x, y, fill, stroke, lw) {
+  if (lw > 0) {
+    c.lineJoin    = 'round';
+    c.lineWidth   = lw;
+    c.strokeStyle = stroke;
+    c.strokeText(text, x, y);
+  }
+  c.fillStyle = fill;
+  c.fillText(text, x, y);
+}
+
+function computeLines(text) {
+  const lines = text.split('\n');
+  return lines.length ? lines : [''];
+}
+
+function drawSelectionBox(c, x, y, w, h, color) {
+  c.save();
+  c.strokeStyle = color;
+  c.lineWidth   = 2;
+  c.setLineDash([6, 3]);
+  c.strokeRect(x - 4, y - 4, w + 8, h + 8);
+  const s = 7;
+  c.fillStyle = color;
+  c.setLineDash([]);
+  [[x-4, y-4], [x+w+4-s, y-4], [x-4, y+h+4-s], [x+w+4-s, y+h+4-s]].forEach(([hx, hy]) => {
+    c.fillRect(hx, hy, s, s);
+  });
+  c.restore();
+}
+
+// ── 메인 렌더 ────────────────────────────────────────────
 function render() {
   ctx.save();
   ctx.clearRect(0, 0, W, H);
 
-  // 1. 배경
-  if (state.bgMode === 'image' && bgImage) {
-    drawCover(ctx, bgImage, W, H);
-  } else {
-    ctx.fillStyle = state.bgColor;
-    ctx.fillRect(0, 0, W, H);
-  }
+  // 배경
+  if (state.bgMode === 'image' && bgImage) drawCover(ctx, bgImage, W, H);
+  else { ctx.fillStyle = state.bgColor; ctx.fillRect(0, 0, W, H); }
 
-  // 2. 인물
+  // 인물
   if (personImage) {
     const pW = state.person.h * (personImage.width / personImage.height);
     ctx.drawImage(personImage, state.person.x - pW / 2, state.person.y, pW, state.person.h);
-    if (selected === 'person') {
-      drawSelectionBox(ctx, state.person.x - pW / 2, state.person.y, pW, state.person.h, '#ff6666');
-    }
+    if (selected === 'person') drawSelectionBox(ctx, state.person.x - pW / 2, state.person.y, pW, state.person.h, '#ff6666');
   }
 
-  // 3. 메인 제목
+  // 메인 제목
   {
     const { x, y, fontSize, text, color, strokeWidth, strokeColor, italic } = state.title;
     const isPlaceholder = !text.trim();
-    const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
-    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
-    const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
+    const fill   = isPlaceholder ? 'rgba(255,255,255,0.5)' : color;
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.3)'       : strokeColor;
+    const lw     = isPlaceholder ? fontSize * 0.05          : strokeWidth;
     ctx.font = buildFont(fontSize);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const lines = computeLines(isPlaceholder ? '메인 제목' : text);
     const boxW  = Math.max(...lines.map(l => ctx.measureText(l).width), 200);
     ctx.save();
-    if (italic) ctx.transform(1, 0, 0.25, 1, -y * 0.25, 0);
+    if (italic) ctx.transform(1, 0, -SHEAR, 1, y * SHEAR, 0);
     let ly = y;
     lines.forEach(line => {
       drawOutline(ctx, line, x, ly, fill, stroke, lw);
@@ -136,19 +176,19 @@ function render() {
     ctx.restore();
   }
 
-  // 4. 서브 제목
+  // 서브 제목
   {
     const { x, y, fontSize, text, color, strokeWidth, strokeColor, italic } = state.subtitle;
     const isPlaceholder = !text.trim();
-    const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
-    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
-    const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
+    const fill   = isPlaceholder ? 'rgba(255,255,255,0.5)' : color;
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.3)'       : strokeColor;
+    const lw     = isPlaceholder ? fontSize * 0.05          : strokeWidth;
     ctx.font = buildFont(fontSize);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const displayText = isPlaceholder ? '서브 제목' : text;
     ctx.save();
-    if (italic) ctx.transform(1, 0, 0.25, 1, -y * 0.25, 0);
+    if (italic) ctx.transform(1, 0, -SHEAR, 1, y * SHEAR, 0);
     drawOutline(ctx, displayText, x, y, fill, stroke, lw);
     if (selected === 'subtitle') {
       const tw = ctx.measureText(displayText).width;
@@ -160,67 +200,20 @@ function render() {
   ctx.restore();
 }
 
-// ── 렌더 유틸 ──
-function drawCover(c, img, w, h) {
-  const ir = img.width / img.height;
-  const cr = w / h;
-  let sw, sh, sx, sy;
-  if (ir > cr) { sh = img.height; sw = sh * cr; sx = (img.width - sw) / 2; sy = 0; }
-  else          { sw = img.width;  sh = sw / cr; sx = 0; sy = (img.height - sh) / 2; }
-  c.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-}
-
-function drawOutline(c, text, x, y, fill, stroke, lw) {
-  c.lineJoin    = 'round';
-  c.lineWidth   = lw;
-  c.strokeStyle = stroke;
-  c.strokeText(text, x, y);
-  c.fillStyle   = fill;
-  c.fillText(text, x, y);
-}
-
-function drawSelectionBox(c, x, y, w, h, color) {
-  c.save();
-  c.strokeStyle = color;
-  c.lineWidth   = 2;
-  c.setLineDash([6, 3]);
-  c.strokeRect(x - 4, y - 4, w + 8, h + 8);
-  // 코너 핸들
-  const s = 7;
-  c.fillStyle = color;
-  c.setLineDash([]);
-  [[x-4, y-4], [x+w+4-s, y-4], [x-4, y+h+4-s], [x+w+4-s, y+h+4-s]].forEach(([hx, hy]) => {
-    c.fillRect(hx, hy, s, s);
-  });
-  c.restore();
-}
-
-function buildFont(size) {
-  if (state.font === 'Do Hyeon') return `${size}px 'Do Hyeon', sans-serif`;
-  return `900 ${size}px '${state.font}', sans-serif`;
-}
-
-function computeLines(text) {
-  const lines = text.split('\n');
-  return lines.length ? lines : [''];
-}
-
-// ── 히트 테스트 ──
+// ── 히트 테스트 ──────────────────────────────────────────
 function getTitleBounds() {
   ctx.font = buildFont(state.title.fontSize);
   const text  = state.title.text.trim() || '메인 제목';
   const lines = computeLines(text);
   const w = Math.max(...lines.map(l => ctx.measureText(l).width), 200);
-  return { x: state.title.x, y: state.title.y,
-           w, h: lines.length * state.title.fontSize * 1.05 };
+  return { x: state.title.x, y: state.title.y, w, h: lines.length * state.title.fontSize * 1.05 };
 }
 
 function getSubtitleBounds() {
   ctx.font = buildFont(state.subtitle.fontSize);
   const text = state.subtitle.text.trim() || '서브 제목';
-  const w    = ctx.measureText(text).width;
-  return { x: state.subtitle.x, y: state.subtitle.y,
-           w: Math.max(w, 200), h: state.subtitle.fontSize * 1.2 };
+  const w    = Math.max(ctx.measureText(text).width, 200);
+  return { x: state.subtitle.x, y: state.subtitle.y, w, h: state.subtitle.fontSize * 1.2 };
 }
 
 function getPersonBounds() {
@@ -241,25 +234,24 @@ function hitTest(cx, cy) {
   return null;
 }
 
-// ── 캔버스 좌표 변환 ──
+// ── 캔버스 좌표 변환 ─────────────────────────────────────
 function canvasXY(e) {
   const rect = canvas.getBoundingClientRect();
-  const sx = W / rect.width;
-  const sy = H / rect.height;
+  const sx = W / rect.width, sy = H / rect.height;
   const cx = e.touches ? e.touches[0].clientX : e.clientX;
   const cy = e.touches ? e.touches[0].clientY : e.clientY;
   return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
 }
 
-// ── 드래그 이벤트 ──
+// ── 드래그 이벤트 ────────────────────────────────────────
 canvas.addEventListener('mousedown', e => {
   const { x, y } = canvasXY(e);
   const hit = hitTest(x, y);
   selected = hit;
   if (hit) {
     isDragging = true;
-    if (hit === 'person') { dragOffX = x - state.person.x;     dragOffY = y - state.person.y; }
-    if (hit === 'title')  { dragOffX = x - state.title.x;      dragOffY = y - state.title.y; }
+    if (hit === 'person')   { dragOffX = x - state.person.x;   dragOffY = y - state.person.y; }
+    if (hit === 'title')    { dragOffX = x - state.title.x;    dragOffY = y - state.title.y; }
     if (hit === 'subtitle') { dragOffX = x - state.subtitle.x; dragOffY = y - state.subtitle.y; }
     canvas.style.cursor = 'grabbing';
   }
@@ -274,8 +266,7 @@ canvas.addEventListener('mousemove', e => {
     if (selected === 'subtitle') { state.subtitle.x = x - dragOffX; state.subtitle.y = y - dragOffY; }
     render();
   } else {
-    const hit = hitTest(x, y);
-    canvas.style.cursor = hit ? 'grab' : 'default';
+    canvas.style.cursor = hitTest(x, y) ? 'grab' : 'default';
   }
 });
 
@@ -308,7 +299,7 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', () => { isDragging = false; });
 
-// ── 배경 탭 전환 ──
+// ── 배경 탭 ──────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -320,7 +311,7 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// ── 배경 이미지 ──
+// ── 배경 이미지 ──────────────────────────────────────────
 function loadImage(file) {
   return new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = URL.createObjectURL(file); });
 }
@@ -344,14 +335,14 @@ async function handleBgFile(file) {
   render();
 }
 
-// ── 배경 색상 ──
+// ── 배경 색상 ─────────────────────────────────────────────
 bgColorInput.addEventListener('input', () => {
   state.bgColor = bgColorInput.value;
   bgColorVal.textContent = state.bgColor.toUpperCase();
   render();
 });
 
-// ── 인물 사진 ──
+// ── 인물 사진 ────────────────────────────────────────────
 btnPersonUpload.addEventListener('click', () => personFile.click());
 btnPersonChange.addEventListener('click', () => personFile.click());
 personUploadZone.addEventListener('click', e => { if (e.target !== btnPersonUpload) personFile.click(); });
@@ -373,7 +364,6 @@ async function handlePersonFile(file) {
   personUploadZone.classList.add('hidden');
   personPreview.classList.remove('hidden');
   personControls.style.display = 'flex';
-  // 템플릿 기본 위치로 초기화
   const d = template.defaults.person;
   state.person.x = d.x; state.person.y = d.y; state.person.h = d.h;
   personSizeSlider.value = 100;
@@ -388,11 +378,11 @@ personSizeSlider.addEventListener('input', () => {
   render();
 });
 
-// ── 텍스트 입력 ──
+// ── 텍스트 입력 ──────────────────────────────────────────
 inputTitle.addEventListener('input', () => { state.title.text = inputTitle.value; render(); });
 inputSub.addEventListener('input',   () => { state.subtitle.text = inputSub.value; render(); });
 
-// ── 크기 / 폭 / 색상 슬라이더 ──
+// ── 크기 슬라이더 ────────────────────────────────────────
 titleSizeSlider.addEventListener('input', () => {
   state.title.fontSize = Number(titleSizeSlider.value);
   titleSizeVal.textContent = state.title.fontSize;
@@ -404,64 +394,60 @@ subSizeSlider.addEventListener('input', () => {
   render();
 });
 
+// ── 색상 ────────────────────────────────────────────────
 document.getElementById('title-color').addEventListener('input', e => {
   state.title.color = e.target.value;
   document.getElementById('title-color-val').textContent = e.target.value.toUpperCase();
   render();
 });
-
-document.getElementById('title-stroke-size').addEventListener('input', e => {
-  state.title.strokeWidth = Number(e.target.value);
-  document.getElementById('title-stroke-size-val').textContent = e.target.value;
-  render();
-});
-
-document.getElementById('title-stroke-color').addEventListener('input', e => {
-  state.title.strokeColor = e.target.value;
-  document.getElementById('title-stroke-color-val').textContent = e.target.value.toUpperCase();
-  render();
-});
-
 document.getElementById('sub-color').addEventListener('input', e => {
   state.subtitle.color = e.target.value;
   document.getElementById('sub-color-val').textContent = e.target.value.toUpperCase();
   render();
 });
 
+// ── 윤곽선 ──────────────────────────────────────────────
+document.getElementById('title-stroke-size').addEventListener('input', e => {
+  state.title.strokeWidth = Number(e.target.value);
+  document.getElementById('title-stroke-size-val').textContent = e.target.value;
+  render();
+});
+document.getElementById('title-stroke-color').addEventListener('input', e => {
+  state.title.strokeColor = e.target.value;
+  document.getElementById('title-stroke-color-val').textContent = e.target.value.toUpperCase();
+  render();
+});
 document.getElementById('sub-stroke-size').addEventListener('input', e => {
   state.subtitle.strokeWidth = Number(e.target.value);
   document.getElementById('sub-stroke-size-val').textContent = e.target.value;
   render();
 });
-
 document.getElementById('sub-stroke-color').addEventListener('input', e => {
   state.subtitle.strokeColor = e.target.value;
   document.getElementById('sub-stroke-color-val').textContent = e.target.value.toUpperCase();
   render();
 });
 
+// ── 기울임 ──────────────────────────────────────────────
 document.getElementById('title-italic').addEventListener('change', e => {
   state.title.italic = e.target.checked;
   render();
 });
-
 document.getElementById('sub-italic').addEventListener('change', e => {
   state.subtitle.italic = e.target.checked;
   render();
 });
 
-// ── 다운로드 ──
+// ── 다운로드 ────────────────────────────────────────────
 function download(w, h) {
   const off = document.createElement('canvas');
   off.width = w; off.height = h;
   const oc = off.getContext('2d');
   const sx = w / W, sy = h / H;
 
-  // 배경
   if (state.bgMode === 'image' && bgImage) drawCover(oc, bgImage, w, h);
   else { oc.fillStyle = state.bgColor; oc.fillRect(0, 0, w, h); }
 
-  // 인물
   if (personImage) {
     const pH = state.person.h * sy;
     const pW = pH * (personImage.width / personImage.height);
@@ -469,15 +455,14 @@ function download(w, h) {
   }
 
   // 메인 제목
-  {
+  if (state.title.text.trim()) {
     const fs = state.title.fontSize * sy;
     const ty = state.title.y * sy;
-    oc.font = buildFont(fs);
+    oc.font = buildFont(Math.round(fs));
     oc.textAlign = 'left'; oc.textBaseline = 'top';
-    const text  = state.title.text.trim() || '메인 제목';
-    const lines = computeLines(text);
+    const lines = computeLines(state.title.text);
     oc.save();
-    if (state.title.italic) oc.transform(1, 0, 0.25, 1, -ty * 0.25, 0);
+    if (state.title.italic) oc.transform(1, 0, -SHEAR, 1, ty * SHEAR, 0);
     let ly = ty;
     lines.forEach(line => {
       drawOutline(oc, line, state.title.x * sx, ly, state.title.color, state.title.strokeColor, state.title.strokeWidth * sy);
@@ -490,10 +475,10 @@ function download(w, h) {
   if (state.subtitle.text.trim()) {
     const fs = state.subtitle.fontSize * sy;
     const ty = state.subtitle.y * sy;
-    oc.font = buildFont(fs);
+    oc.font = buildFont(Math.round(fs));
     oc.textAlign = 'left'; oc.textBaseline = 'top';
     oc.save();
-    if (state.subtitle.italic) oc.transform(1, 0, 0.25, 1, -ty * 0.25, 0);
+    if (state.subtitle.italic) oc.transform(1, 0, -SHEAR, 1, ty * SHEAR, 0);
     drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, ty, state.subtitle.color, state.subtitle.strokeColor, state.subtitle.strokeWidth * sy);
     oc.restore();
   }
@@ -509,5 +494,4 @@ function download(w, h) {
 document.getElementById('btn-720').addEventListener('click',  () => download(1280, 720));
 document.getElementById('btn-1080').addEventListener('click', () => download(1920, 1080));
 
-// ── 시작 ──
 init();

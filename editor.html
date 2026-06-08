@@ -6,7 +6,7 @@
   <title>편집 — 썸네일 메이커</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Noto+Sans+KR:wght@600;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@600;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="page-editor">
@@ -18,7 +18,7 @@
 
   <main class="editor-layout">
 
-    <!-- 왼쪽: 컨트롤 패널 -->
+    <!-- 컨트롤 패널 -->
     <aside class="controls">
 
       <!-- 배경 -->
@@ -43,7 +43,7 @@
         <div id="bg-color-panel" class="hidden">
           <div class="color-row">
             <input type="color" id="bg-color" class="color-picker">
-            <span id="bg-color-val">#B8860B</span>
+            <span id="bg-color-val" class="color-val">#B8860B</span>
           </div>
         </div>
       </div>
@@ -64,38 +64,44 @@
             <button class="btn btn-ghost btn-sm" id="btn-person-remove">제거</button>
           </div>
         </div>
-        <div id="person-controls" class="ctrl-sub" style="display:none">
+        <div id="person-controls" style="display:none;flex-direction:column;gap:7px;">
           <label class="ctrl-label">크기 <span id="person-size-val">100%</span></label>
           <input type="range" id="person-size" class="slider" min="30" max="200" value="100">
-          <p class="tip">캔버스에서 드래그로 위치 이동</p>
+          <p class="tip">캔버스에서 드래그로 이동</p>
         </div>
       </div>
 
       <!-- 텍스트 -->
       <div class="ctrl-section">
         <p class="ctrl-title">텍스트</p>
+
+        <!-- 메인 제목 -->
         <div class="input-group">
           <label class="ctrl-label">메인 제목</label>
-          <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목&#10;(줄바꿈 가능)"></textarea>
+          <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목&#10;(엔터로 줄바꿈)"></textarea>
           <label class="ctrl-label">크기 <span id="title-size-val">220</span>px</label>
           <input type="range" id="title-size" class="slider" min="60" max="320" value="220">
           <label class="ctrl-label">색상</label>
           <div class="color-row">
             <input type="color" id="title-color" class="color-picker" value="#ffffff">
-            <span id="title-color-val">#FFFFFF</span>
+            <span id="title-color-val" class="color-val">#FFFFFF</span>
           </div>
-          <label class="ctrl-label">윤곽선 굵기 <span id="title-stroke-size-val">5</span>px</label>
-          <input type="range" id="title-stroke-size" class="slider" min="0" max="20" value="5">
+          <label class="ctrl-label">윤곽선 굵기 <span id="title-stroke-size-val">14</span>px</label>
+          <input type="range" id="title-stroke-size" class="slider" min="0" max="30" value="14">
           <label class="ctrl-label">윤곽선 색상</label>
           <div class="color-row">
             <input type="color" id="title-stroke-color" class="color-picker" value="#000000">
-            <span id="title-stroke-color-val">#000000</span>
+            <span id="title-stroke-color-val" class="color-val">#000000</span>
           </div>
           <label class="ctrl-check">
-            <input type="checkbox" id="title-italic"> 기울임 (이탤릭)
+            <input type="checkbox" id="title-italic"> 기울임
           </label>
         </div>
-        <div class="input-group" style="margin-top:12px">
+
+        <hr class="divider">
+
+        <!-- 서브 제목 -->
+        <div class="input-group">
           <label class="ctrl-label">서브 제목</label>
           <input type="text" id="input-sub" class="input-field" placeholder="서브 제목">
           <label class="ctrl-label">크기 <span id="sub-size-val">84</span>px</label>
@@ -103,20 +109,21 @@
           <label class="ctrl-label">색상</label>
           <div class="color-row">
             <input type="color" id="sub-color" class="color-picker" value="#ffffff">
-            <span id="sub-color-val">#FFFFFF</span>
+            <span id="sub-color-val" class="color-val">#FFFFFF</span>
           </div>
-          <label class="ctrl-label">윤곽선 굵기 <span id="sub-stroke-size-val">3</span>px</label>
-          <input type="range" id="sub-stroke-size" class="slider" min="0" max="20" value="3">
+          <label class="ctrl-label">윤곽선 굵기 <span id="sub-stroke-size-val">6</span>px</label>
+          <input type="range" id="sub-stroke-size" class="slider" min="0" max="30" value="6">
           <label class="ctrl-label">윤곽선 색상</label>
           <div class="color-row">
             <input type="color" id="sub-stroke-color" class="color-picker" value="#000000">
-            <span id="sub-stroke-color-val">#000000</span>
+            <span id="sub-stroke-color-val" class="color-val">#000000</span>
           </div>
           <label class="ctrl-check">
-            <input type="checkbox" id="sub-italic"> 기울임 (이탤릭)
+            <input type="checkbox" id="sub-italic"> 기울임
           </label>
         </div>
-        <p class="tip" style="margin-top:6px">캔버스에서 텍스트를 직접 드래그로 이동</p>
+
+        <p class="tip">캔버스에서 텍스트를 드래그로 이동</p>
       </div>
 
       <!-- 다운로드 -->
@@ -136,9 +143,9 @@
 
     </aside>
 
-    <!-- 오른쪽: 캔버스 -->
+    <!-- 캔버스 -->
     <div class="preview-area">
-      <p class="preview-label">미리보기 — 텍스트·인물을 캔버스에서 직접 드래그하세요</p>
+      <p class="preview-label">미리보기 — 텍스트·인물을 캔버스에서 직접 드래그</p>
       <div class="canvas-wrap">
         <canvas id="canvas" width="1280" height="720"></canvas>
       </div>
