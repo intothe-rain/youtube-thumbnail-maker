@@ -196,8 +196,8 @@ function drawSelectionBox(c, x, y, w, h, color) {
 }
 
 function buildFont(size) {
-  if (state.font === 'Black Han Sans') return `900 ${size}px 'Black Han Sans', sans-serif`;
-  return `${size}px '${state.font}', sans-serif`;
+  if (state.font === 'Do Hyeon') return `${size}px 'Do Hyeon', sans-serif`;
+  return `900 ${size}px '${state.font}', sans-serif`;
 }
 
 function computeLines(text) {

@@ -10,7 +10,7 @@ const TEMPLATES = [
     defaults: {
       bgMode:  'color',
       bgColor: '#B8860B',
-      font:    'Do Hyeon',
+      font:    'Noto Sans KR',
       person:  { x: 960, y: 0, h: 720 },
       title:    { x: 40, y: 28,  fontSize: 220, italic: true, text: '침착맨\n삼국지' },
       subtitle: { x: 40, y: 590, fontSize: 84,  italic: true, text: '통합본' },
