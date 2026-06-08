@@ -55,8 +55,9 @@ function init() {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
     person:  { ...d.person },
-    title:   { ...d.title,    text: '', color: '#ffffff', strokeWidth: 5, strokeColor: '#000000', italic: d.title.italic    ?? false },
-    subtitle:{ ...d.subtitle, text: '', color: '#ffffff', strokeWidth: 3, strokeColor: '#000000', italic: d.subtitle.italic ?? false },
+    font:    d.font || 'Black Han Sans',
+    title:   { color: '#ffffff', strokeWidth: 5, strokeColor: '#000000', italic: false, text: '', ...d.title },
+    subtitle:{ color: '#ffffff', strokeWidth: 3, strokeColor: '#000000', italic: false, text: '', ...d.subtitle },
   };
 
   // UI 초기값 동기화
@@ -83,7 +84,11 @@ function init() {
   document.getElementById('title-italic').checked = state.title.italic;
   document.getElementById('sub-italic').checked   = state.subtitle.italic;
 
+  inputTitle.value = state.title.text;
+  inputSub.value   = state.subtitle.text;
+
   render();
+  document.fonts.ready.then(() => render());
 }
 
 // ── 렌더링 ──
@@ -115,7 +120,7 @@ function render() {
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
     const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
     const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
-    ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
+    ctx.font = buildFont(fontSize);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const lines = computeLines(isPlaceholder ? '메인 제목' : text);
@@ -138,7 +143,7 @@ function render() {
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
     const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
     const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
-    ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
+    ctx.font = buildFont(fontSize);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const displayText = isPlaceholder ? '서브 제목' : text;
@@ -190,6 +195,11 @@ function drawSelectionBox(c, x, y, w, h, color) {
   c.restore();
 }
 
+function buildFont(size) {
+  if (state.font === 'Black Han Sans') return `900 ${size}px 'Black Han Sans', sans-serif`;
+  return `${size}px '${state.font}', sans-serif`;
+}
+
 function computeLines(text) {
   const lines = text.split('\n');
   return lines.length ? lines : [''];
@@ -197,7 +207,7 @@ function computeLines(text) {
 
 // ── 히트 테스트 ──
 function getTitleBounds() {
-  ctx.font = `900 ${state.title.fontSize}px 'Black Han Sans', sans-serif`;
+  ctx.font = buildFont(state.title.fontSize);
   const text  = state.title.text.trim() || '메인 제목';
   const lines = computeLines(text);
   const w = Math.max(...lines.map(l => ctx.measureText(l).width), 200);
@@ -206,7 +216,7 @@ function getTitleBounds() {
 }
 
 function getSubtitleBounds() {
-  ctx.font = `900 ${state.subtitle.fontSize}px 'Black Han Sans', sans-serif`;
+  ctx.font = buildFont(state.subtitle.fontSize);
   const text = state.subtitle.text.trim() || '서브 제목';
   const w    = ctx.measureText(text).width;
   return { x: state.subtitle.x, y: state.subtitle.y,
@@ -462,7 +472,7 @@ function download(w, h) {
   {
     const fs = state.title.fontSize * sy;
     const ty = state.title.y * sy;
-    oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
+    oc.font = buildFont(fs);
     oc.textAlign = 'left'; oc.textBaseline = 'top';
     const text  = state.title.text.trim() || '메인 제목';
     const lines = computeLines(text);
@@ -480,7 +490,7 @@ function download(w, h) {
   if (state.subtitle.text.trim()) {
     const fs = state.subtitle.fontSize * sy;
     const ty = state.subtitle.y * sy;
-    oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
+    oc.font = buildFont(fs);
     oc.textAlign = 'left'; oc.textBaseline = 'top';
     oc.save();
     if (state.subtitle.italic) oc.transform(1, 0, 0.25, 1, -ty * 0.25, 0);
