@@ -6,117 +6,79 @@
   <title>썸네일 메이커</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@600;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-index">
 
   <header class="app-header">
     <span class="logo-icon">▶</span>
     <span class="logo-text">썸네일 메이커</span>
   </header>
 
-  <main class="app-layout">
-
-    <!-- 왼쪽: 컨트롤 패널 -->
-    <aside class="controls">
-
-      <!-- 배경 -->
-      <div class="ctrl-section">
-        <p class="ctrl-title">배경</p>
-        <div class="tab-row">
-          <button class="tab active" data-tab="image">이미지</button>
-          <button class="tab" data-tab="color">색상</button>
-        </div>
-
-        <div id="bg-image-panel">
-          <input type="file" id="bg-file" accept="image/*" hidden>
-          <div id="bg-upload-zone" class="upload-zone">
-            <span class="upload-icon">🖼️</span>
-            <p>클릭 또는 드래그</p>
-            <button class="btn btn-ghost btn-sm" id="btn-bg-upload">파일 선택</button>
-          </div>
-          <div id="bg-preview" class="img-preview hidden">
-            <img id="bg-preview-img" alt="배경">
-            <button class="btn btn-ghost btn-sm" id="btn-bg-change">변경</button>
-          </div>
-        </div>
-
-        <div id="bg-color-panel" class="hidden">
-          <div class="color-row">
-            <input type="color" id="bg-color" value="#B8860B" class="color-picker">
-            <span id="bg-color-val">#B8860B</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 인물 사진 -->
-      <div class="ctrl-section">
-        <p class="ctrl-title">인물 사진</p>
-        <input type="file" id="person-file" accept="image/*" hidden>
-        <div id="person-upload-zone" class="upload-zone">
-          <span class="upload-icon">🧍</span>
-          <p>투명 PNG 권장</p>
-          <button class="btn btn-ghost btn-sm" id="btn-person-upload">파일 선택</button>
-        </div>
-        <div id="person-preview" class="img-preview hidden">
-          <img id="person-preview-img" alt="인물">
-          <div class="btn-row">
-            <button class="btn btn-ghost btn-sm" id="btn-person-change">변경</button>
-            <button class="btn btn-ghost btn-sm" id="btn-person-remove">제거</button>
-          </div>
-        </div>
-        <div class="ctrl-sub" id="person-controls" style="display:none">
-          <label class="ctrl-label">크기 <span id="person-size-val">100%</span></label>
-          <input type="range" id="person-size" class="slider" min="30" max="180" value="100">
-          <p class="tip">캔버스에서 드래그로 위치 조정</p>
-        </div>
-      </div>
-
-      <!-- 텍스트 -->
-      <div class="ctrl-section">
-        <p class="ctrl-title">텍스트</p>
-        <div class="input-group">
-          <label class="ctrl-label">메인 제목</label>
-          <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목&#10;(줄바꿈 가능)"></textarea>
-        </div>
-        <div class="input-group">
-          <label class="ctrl-label">서브 제목</label>
-          <input type="text" id="input-sub" class="input-field" placeholder="서브 제목">
-        </div>
-        <div class="input-group">
-          <label class="ctrl-label">제목 크기 <span id="title-size-val">220</span>px</label>
-          <input type="range" id="title-size" class="slider" min="80" max="320" value="220">
-        </div>
-      </div>
-
-      <!-- 다운로드 -->
-      <div class="ctrl-section">
-        <p class="ctrl-title">다운로드</p>
-        <div class="btn-row">
-          <button class="btn btn-download" id="btn-720">
-            <span class="res">720p</span>
-            <span class="dim">1280×720</span>
-          </button>
-          <button class="btn btn-download btn-hd" id="btn-1080">
-            <span class="res">1080p</span>
-            <span class="dim">1920×1080</span>
-          </button>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- 오른쪽: 캔버스 미리보기 -->
-    <div class="preview-area">
-      <p class="preview-label">미리보기</p>
-      <div class="canvas-wrap">
-        <canvas id="canvas" width="1280" height="720"></canvas>
-      </div>
+  <main class="index-main">
+    <div class="index-hero">
+      <h1 class="hero-title">어떤 스타일로 만들까요?</h1>
+      <p class="hero-sub">템플릿을 선택하면 바로 편집이 시작됩니다</p>
     </div>
 
+    <div id="category-tabs" class="category-tabs"></div>
+    <div id="template-grid" class="index-grid"></div>
   </main>
 
-  <script src="main.js"></script>
+  <script src="templates.js"></script>
+  <script>
+    const grid = document.getElementById('template-grid');
+    const tabsEl = document.getElementById('category-tabs');
+    let activeCategory = '전체';
+
+    // 카테고리 목록 생성
+    const categories = ['전체', ...new Set(TEMPLATES.map(t => t.category))];
+
+    function renderTabs() {
+      tabsEl.innerHTML = '';
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-tab' + (cat === activeCategory ? ' active' : '');
+        btn.textContent = cat;
+        btn.addEventListener('click', () => {
+          activeCategory = cat;
+          renderTabs();
+          renderGrid();
+        });
+        tabsEl.appendChild(btn);
+      });
+    }
+
+    function renderGrid() {
+      const filtered = activeCategory === '전체'
+        ? TEMPLATES
+        : TEMPLATES.filter(t => t.category === activeCategory);
+
+      grid.innerHTML = '';
+      filtered.forEach(tmpl => {
+        const card = document.createElement('a');
+        card.className = 'tmpl-card';
+        card.href = `editor.html?id=${tmpl.id}`;
+        card.innerHTML = `
+          <div class="tmpl-thumb">
+            <img src="${tmpl.thumbnail}" alt="${tmpl.name}">
+          </div>
+          <div class="tmpl-info">
+            <span class="tmpl-name">${tmpl.name}</span>
+            <span class="tmpl-cat">${tmpl.category}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<p class="empty-msg">해당 카테고리에 템플릿이 없습니다.</p>';
+      }
+    }
+
+    renderTabs();
+    renderGrid();
+  </script>
 </body>
 </html>

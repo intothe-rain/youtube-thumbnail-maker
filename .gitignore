@@ -1,9 +1,7 @@
 node_modules/
 package.json
 package-lock.json
-test_v2.js
-test_flow.js
-test_upload.js
+test_*.js
 test-results/
 .DS_Store
 Thumbs.db
