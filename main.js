@@ -17,6 +17,11 @@ const TEMPLATES = [
 let uploadedImage = null;
 let selectedTemplateId = null;
 
+let foregroundImage = null;
+let fgX = 640, fgY = 36, fgH = 648;
+let isDraggingFg = false;
+let dragStartX = 0, dragStartY = 0, dragStartFgX = 0, dragStartFgY = 0;
+
 // ── DOM ──
 const uploadZone    = document.getElementById('upload-zone');
 const fileInput     = document.getElementById('file-input');
@@ -28,6 +33,14 @@ const templateGrid  = document.getElementById('template-grid');
 const previewCanvas = document.getElementById('preview-canvas');
 const inputTitle    = document.getElementById('input-title');
 const inputSubtitle = document.getElementById('input-subtitle');
+
+const fgFileInput     = document.getElementById('fg-file-input');
+const fgUploadZone    = document.getElementById('fg-upload-zone');
+const fgUploadPreview = document.getElementById('fg-upload-preview');
+const fgPreviewImg    = document.getElementById('fg-preview-img');
+const fgScaleGroup    = document.getElementById('fg-scale-group');
+const fgScaleInput    = document.getElementById('fg-scale');
+const fgScaleVal      = document.getElementById('fg-scale-val');
 
 // ── 초기화 ──
 btnUpload.addEventListener('click', () => fileInput.click());
@@ -49,14 +62,111 @@ inputSubtitle.addEventListener('input', renderMainPreview);
 document.getElementById('btn-720').addEventListener('click', () => download(1280, 720));
 document.getElementById('btn-1080').addEventListener('click', () => download(1920, 1080));
 
+// ── 인물 이미지 이벤트 ──
+document.getElementById('btn-fg-upload').addEventListener('click', () => fgFileInput.click());
+document.getElementById('btn-fg-change').addEventListener('click', () => fgFileInput.click());
+fgFileInput.addEventListener('change', e => { if (e.target.files[0]) handleFgFile(e.target.files[0]); });
+
+document.getElementById('btn-fg-remove').addEventListener('click', () => {
+  foregroundImage = null;
+  fgUploadZone.classList.remove('hidden');
+  fgUploadPreview.classList.add('hidden');
+  fgScaleGroup.classList.add('hidden');
+  renderMainPreview();
+});
+
+fgScaleInput.addEventListener('input', e => {
+  fgH = Math.round(PREVIEW_H * e.target.value / 100);
+  fgScaleVal.textContent = e.target.value + '%';
+  renderMainPreview();
+});
+
+// ── 캔버스 드래그 (인물 위치 조정) ──
+function getCanvasPos(e) {
+  const rect = previewCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (PREVIEW_W / rect.width),
+    y: (src.clientY - rect.top)  * (PREVIEW_H / rect.height)
+  };
+}
+
+function isFgHit(px, py) {
+  if (!foregroundImage) return false;
+  const dh = fgH;
+  const dw = foregroundImage.width * (dh / foregroundImage.height);
+  return px >= fgX - dw / 2 && px <= fgX + dw / 2 && py >= fgY && py <= fgY + dh;
+}
+
+previewCanvas.addEventListener('mousedown', e => {
+  if (!foregroundImage) return;
+  const pos = getCanvasPos(e);
+  if (isFgHit(pos.x, pos.y)) {
+    isDraggingFg = true;
+    dragStartX = pos.x; dragStartY = pos.y;
+    dragStartFgX = fgX; dragStartFgY = fgY;
+    e.preventDefault();
+  }
+});
+
+previewCanvas.addEventListener('mousemove', e => {
+  if (!foregroundImage) return;
+  const pos = getCanvasPos(e);
+  previewCanvas.style.cursor = isDraggingFg ? 'grabbing' : isFgHit(pos.x, pos.y) ? 'grab' : 'default';
+  if (!isDraggingFg) return;
+  fgX = dragStartFgX + (pos.x - dragStartX);
+  fgY = dragStartFgY + (pos.y - dragStartY);
+  renderMainPreview();
+});
+
+previewCanvas.addEventListener('mouseleave', () => { if (!isDraggingFg) previewCanvas.style.cursor = 'default'; });
+window.addEventListener('mouseup', () => { isDraggingFg = false; });
+
+previewCanvas.addEventListener('touchstart', e => {
+  if (!foregroundImage) return;
+  const pos = getCanvasPos(e);
+  if (isFgHit(pos.x, pos.y)) {
+    isDraggingFg = true;
+    dragStartX = pos.x; dragStartY = pos.y;
+    dragStartFgX = fgX; dragStartFgY = fgY;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+previewCanvas.addEventListener('touchmove', e => {
+  if (!isDraggingFg) return;
+  const pos = getCanvasPos(e);
+  fgX = dragStartFgX + (pos.x - dragStartX);
+  fgY = dragStartFgY + (pos.y - dragStartY);
+  renderMainPreview();
+  e.preventDefault();
+}, { passive: false });
+
+previewCanvas.addEventListener('touchend', () => { isDraggingFg = false; });
+
 // ── 파일 처리 ──
 async function handleFile(file) {
   uploadedImage = await loadImage(file);
   previewImg.src = URL.createObjectURL(file);
   uploadZone.classList.add('hidden');
   uploadPreview.classList.remove('hidden');
+  document.getElementById('fg-upload-section').classList.remove('hidden');
   show('section-template');
   await buildTemplateGrid();
+}
+
+async function handleFgFile(file) {
+  foregroundImage = await loadImage(file);
+  fgH = Math.round(PREVIEW_H * 0.90);
+  fgX = Math.round(PREVIEW_W * 0.75);
+  fgY = Math.round(PREVIEW_H * 0.05);
+  fgPreviewImg.src = URL.createObjectURL(file);
+  fgUploadZone.classList.add('hidden');
+  fgUploadPreview.classList.remove('hidden');
+  fgScaleInput.value = 90;
+  fgScaleVal.textContent = '90%';
+  fgScaleGroup.classList.remove('hidden');
+  renderMainPreview();
 }
 
 function loadImage(file) {
@@ -129,6 +239,16 @@ function download(w, h) {
   }, 'image/png');
 }
 
+// ── 인물 이미지 합성 ──
+function drawForeground(ctx, w, h) {
+  if (!foregroundImage) return;
+  const s  = h / PREVIEW_H;
+  const dh = fgH * s;
+  const dw = foregroundImage.width * (fgH / foregroundImage.height) * s;
+  const rx = w / PREVIEW_W;
+  ctx.drawImage(foregroundImage, fgX * rx - dw / 2, fgY * s, dw, dh);
+}
+
 // ── 템플릿 렌더 디스패처 ──
 function renderTemplate(canvas, img, templateId, title, subtitle) {
   const ctx = canvas.getContext('2d');
@@ -136,6 +256,7 @@ function renderTemplate(canvas, img, templateId, title, subtitle) {
   const h   = canvas.height;
   ctx.clearRect(0, 0, w, h);
   drawImageCover(ctx, img, w, h);
+  drawForeground(ctx, w, h);
   switch (templateId) {
     case 'overlay': renderOverlay(ctx, w, h, title, subtitle); break;
     case 'dark':    renderDark(ctx, w, h, title, subtitle);    break;
@@ -323,22 +444,23 @@ const GALLERY_DATA = [
   {
     category: '해외',
     items: [
-      { name: 'MrBeast', style: '도전 / 충격형', file: 'references/mrbeast.jpg' },
-      { name: 'MKBHD',   style: '미니멀 테크형', file: 'references/mkbhd.jpg' },
+      { name: 'MrBeast', style: '도전 / 충격형',  file: 'references/mrbeast.jpg',           templateId: 'impact'  },
+      { name: 'MKBHD',   style: '미니멀 테크형',  file: 'references/mkbhd.jpg',             templateId: 'dark'    },
     ]
   },
   {
     category: '국내',
     items: [
-      { name: '침착맨',   style: '예능 / 토크형',   file: 'references/chimchakman.jpg' },
-      { name: '빠니보틀', style: '여행 비교형',     file: 'references/panibottle_india.jpg' },
-      { name: '빠니보틀', style: '여행 감성형',     file: 'references/panibottle_africa.jpg' },
-      { name: '쯔양',    style: '먹방형',          file: 'references/tzuyang.jpg' },
+      { name: '침착맨',   style: '예능 / 토크형',  file: 'references/chimchakman.jpg',       templateId: 'split'   },
+      { name: '빠니보틀', style: '여행 비교형',    file: 'references/panibottle_india.jpg',  templateId: 'overlay' },
+      { name: '빠니보틀', style: '여행 감성형',    file: 'references/panibottle_africa.jpg', templateId: 'banner'  },
+      { name: '쯔양',    style: '먹방형',          file: 'references/tzuyang.jpg',           templateId: 'neon'    },
     ]
   }
 ];
 
 let currentGalleryCategory = '해외';
+let currentCompareItem = null;
 
 const modalGallery    = document.getElementById('modal-gallery');
 const galleryGrid     = document.getElementById('gallery-grid');
@@ -392,6 +514,7 @@ function renderGalleryGrid(category) {
 
 // 비교 뷰 열기
 function openCompare(item) {
+  currentCompareItem = item;
   compareRef.src = item.file;
   compareLabel.textContent = `${item.name} — ${item.style}`;
 
@@ -413,6 +536,13 @@ function openCompare(item) {
   galleryGrid.classList.add('hidden');
   galleryCompare.classList.remove('hidden');
 }
+
+// 이 스타일로 만들기
+document.getElementById('btn-apply-style').addEventListener('click', () => {
+  if (!currentCompareItem || !uploadedImage) return;
+  closeGallery();
+  selectTemplate(currentCompareItem.templateId);
+});
 
 // 그리드로 돌아가기
 document.getElementById('btn-compare-back').addEventListener('click', showGalleryGrid);

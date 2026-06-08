@@ -385,3 +385,40 @@ body {
   .compare-panels { grid-template-columns: 1fr; }
   .modal-gallery-card { max-height: 95vh; border-radius: 12px; }
 }
+
+/* ═══════════════════════════════
+   인물 이미지 업로드
+═══════════════════════════════ */
+.fg-section {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--border);
+}
+.fg-section-header { display: flex; align-items: center; gap: 8px; }
+.fg-label { font-size: 14px; font-weight: 700; }
+.fg-badge {
+  font-size: 11px;
+  background: var(--card);
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.fg-notice { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.fg-notice a { color: var(--primary); }
+.fg-upload-zone { padding: 20px 16px; }
+.fg-scale-slider {
+  width: 100%;
+  accent-color: var(--primary);
+  cursor: pointer;
+  height: 4px;
+}
+
+/* ── 갤러리 비교 버튼 그룹 ── */
+.compare-actions { display: flex; align-items: center; gap: 10px; }
+.btn-apply { font-size: 13px; padding: 8px 16px; }

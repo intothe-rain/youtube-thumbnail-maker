@@ -38,7 +38,10 @@
         <div id="gallery-compare" class="gallery-compare hidden">
           <div class="compare-header">
             <span id="compare-label" class="compare-label"></span>
-            <button id="btn-compare-back" class="btn-back">← 목록으로</button>
+            <div class="compare-actions">
+              <button id="btn-apply-style" class="btn btn-primary btn-apply">이 스타일로 만들기</button>
+              <button id="btn-compare-back" class="btn-back">← 목록으로</button>
+            </div>
           </div>
           <div class="compare-panels">
             <div class="compare-panel">
@@ -59,7 +62,7 @@
 
     <!-- Step 1: 이미지 업로드 -->
     <section id="section-upload" class="section">
-      <div class="section-label">01 이미지 업로드</div>
+      <div class="section-label">01 배경 이미지</div>
       <div id="upload-zone" class="upload-zone">
         <input type="file" id="file-input" accept="image/*" hidden>
         <div class="upload-icon">🖼️</div>
@@ -70,6 +73,32 @@
       <div id="upload-preview" class="upload-preview hidden">
         <img id="preview-img" src="" alt="업로드된 이미지">
         <button id="btn-change" class="btn btn-ghost">이미지 변경</button>
+      </div>
+
+      <!-- 인물 이미지 (선택사항) -->
+      <div id="fg-upload-section" class="fg-section hidden">
+        <div class="fg-section-header">
+          <span class="fg-label">인물 이미지</span>
+          <span class="fg-badge">선택사항</span>
+        </div>
+        <p class="fg-notice">
+          배경이 제거된 투명 PNG(누끼)를 올리세요. 일반 사진은 배경 박스가 그대로 보입니다.<br>
+          무료 배경 제거 도구: <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer">remove.bg</a>
+        </p>
+        <input type="file" id="fg-file-input" accept="image/*" hidden>
+        <div id="fg-upload-zone" class="upload-zone fg-upload-zone">
+          <div class="upload-icon">🧍</div>
+          <p class="upload-title">인물 PNG 업로드</p>
+          <p class="upload-sub">투명 배경 PNG 권장</p>
+          <button id="btn-fg-upload" class="btn btn-ghost">파일 선택</button>
+        </div>
+        <div id="fg-upload-preview" class="upload-preview hidden">
+          <img id="fg-preview-img" src="" alt="인물 이미지">
+          <div style="display:flex;gap:8px;">
+            <button id="btn-fg-change" class="btn btn-ghost">변경</button>
+            <button id="btn-fg-remove" class="btn btn-ghost">제거</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -93,6 +122,10 @@
           <div class="input-group">
             <label class="input-label" for="input-subtitle">서브 제목</label>
             <input type="text" id="input-subtitle" class="input-field" placeholder="서브 제목 (선택사항)">
+          </div>
+          <div id="fg-scale-group" class="input-group hidden">
+            <label class="input-label" for="fg-scale">인물 크기 <span id="fg-scale-val">90%</span></label>
+            <input type="range" id="fg-scale" class="fg-scale-slider" min="30" max="150" value="90">
           </div>
           <div class="download-section">
             <p class="download-label">해상도 선택 후 다운로드</p>
