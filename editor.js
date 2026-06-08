@@ -55,8 +55,8 @@ function init() {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
     person:  { ...d.person },
-    title:   { ...d.title,    text: '', color: '#ffffff' },
-    subtitle:{ ...d.subtitle, text: '', color: '#ffffff' },
+    title:   { ...d.title,    text: '', color: '#ffffff', strokeWidth: 5,  strokeColor: '#000000' },
+    subtitle:{ ...d.subtitle, text: '', color: '#ffffff', strokeWidth: 3,  strokeColor: '#000000' },
   };
 
   // UI 초기값 동기화
@@ -75,6 +75,11 @@ function init() {
   titleSizeVal.textContent  = state.title.fontSize;
   subSizeSlider.value       = state.subtitle.fontSize;
   subSizeVal.textContent    = state.subtitle.fontSize;
+
+  document.getElementById('title-stroke-size').value       = state.title.strokeWidth;
+  document.getElementById('title-stroke-size-val').textContent = state.title.strokeWidth;
+  document.getElementById('sub-stroke-size').value         = state.subtitle.strokeWidth;
+  document.getElementById('sub-stroke-size-val').textContent   = state.subtitle.strokeWidth;
 
   render();
 }
@@ -103,10 +108,11 @@ function render() {
 
   // 3. 메인 제목
   {
-    const { x, y, fontSize, text, color } = state.title;
+    const { x, y, fontSize, text, color, strokeWidth, strokeColor } = state.title;
     const isPlaceholder = !text.trim();
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
-    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : '#000000';
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
+    const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
     ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
@@ -114,7 +120,7 @@ function render() {
     const boxW  = Math.max(...lines.map(l => ctx.measureText(l).width), 200);
     let ly = y;
     lines.forEach(line => {
-      drawOutline(ctx, line, x, ly, fill, stroke, fontSize * 0.04);
+      drawOutline(ctx, line, x, ly, fill, stroke, lw);
       ly += fontSize * 1.05;
     });
     if (selected === 'title') drawSelectionBox(ctx, x, y, boxW, lines.length * fontSize * 1.05, '#ffffff');
@@ -122,15 +128,16 @@ function render() {
 
   // 4. 서브 제목
   {
-    const { x, y, fontSize, text, color } = state.subtitle;
+    const { x, y, fontSize, text, color, strokeWidth, strokeColor } = state.subtitle;
     const isPlaceholder = !text.trim();
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
-    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : '#000000';
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
+    const lw     = isPlaceholder ? fontSize * 0.025          : strokeWidth;
     ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const displayText = isPlaceholder ? '서브 제목' : text;
-    drawOutline(ctx, displayText, x, y, fill, stroke, fontSize * 0.04);
+    drawOutline(ctx, displayText, x, y, fill, stroke, lw);
     if (selected === 'subtitle') {
       const tw = ctx.measureText(displayText).width;
       drawSelectionBox(ctx, x, y, Math.max(tw, 200), fontSize * 1.1, '#ffffff');
@@ -385,9 +392,33 @@ document.getElementById('title-color').addEventListener('input', e => {
   render();
 });
 
+document.getElementById('title-stroke-size').addEventListener('input', e => {
+  state.title.strokeWidth = Number(e.target.value);
+  document.getElementById('title-stroke-size-val').textContent = e.target.value;
+  render();
+});
+
+document.getElementById('title-stroke-color').addEventListener('input', e => {
+  state.title.strokeColor = e.target.value;
+  document.getElementById('title-stroke-color-val').textContent = e.target.value.toUpperCase();
+  render();
+});
+
 document.getElementById('sub-color').addEventListener('input', e => {
   state.subtitle.color = e.target.value;
   document.getElementById('sub-color-val').textContent = e.target.value.toUpperCase();
+  render();
+});
+
+document.getElementById('sub-stroke-size').addEventListener('input', e => {
+  state.subtitle.strokeWidth = Number(e.target.value);
+  document.getElementById('sub-stroke-size-val').textContent = e.target.value;
+  render();
+});
+
+document.getElementById('sub-stroke-color').addEventListener('input', e => {
+  state.subtitle.strokeColor = e.target.value;
+  document.getElementById('sub-stroke-color-val').textContent = e.target.value.toUpperCase();
   render();
 });
 
@@ -418,7 +449,7 @@ function download(w, h) {
     const lines = computeLines(text);
     let ly = state.title.y * sy;
     lines.forEach(line => {
-      drawOutline(oc, line, state.title.x * sx, ly, state.title.color, '#000000', fs * 0.04);
+      drawOutline(oc, line, state.title.x * sx, ly, state.title.color, state.title.strokeColor, state.title.strokeWidth * sy);
       ly += fs * 1.05;
     });
   }
@@ -428,7 +459,7 @@ function download(w, h) {
     const fs = state.subtitle.fontSize * sy;
     oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
     oc.textAlign = 'left'; oc.textBaseline = 'top';
-    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, state.subtitle.y * sy, state.subtitle.color, '#000000', fs * 0.04);
+    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, state.subtitle.y * sy, state.subtitle.color, state.subtitle.strokeColor, state.subtitle.strokeWidth * sy);
   }
 
   off.toBlob(blob => {
