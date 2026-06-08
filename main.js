@@ -1,68 +1,53 @@
-// ── 상수 ──
-const GRID_W    = 320;
-const GRID_H    = 180;
-const PREVIEW_W = 1280;
-const PREVIEW_H = 720;
-
-// ── 12개 템플릿 정의 ──
-const TEMPLATES = [
-  // 기본 스타일 (6)
-  { id: 'overlay',     group: 'basic',    name: '풀 오버레이',  desc: '하단 그라데이션 + 텍스트' },
-  { id: 'dark',        group: 'basic',    name: '다크 오버레이', desc: '전체 다크 + 중앙 텍스트' },
-  { id: 'banner',      group: 'basic',    name: '배너',          desc: '하단 레드 배너 + 제목' },
-  { id: 'split',       group: 'basic',    name: '분할',          desc: '우측 패널 + 텍스트' },
-  { id: 'impact',      group: 'basic',    name: '임팩트',        desc: '상단 강조 + 하단 서브' },
-  { id: 'neon',        group: 'basic',    name: '네온 글로우',   desc: '글로우 텍스트 효과' },
-  // 유튜버 스타일 (6)
-  { id: 'mrbeast',     group: 'youtuber', name: 'MrBeast',  hasPerson: true,  ref: 'references/mrbeast.jpg',           desc: '도전 / 충격형' },
-  { id: 'mkbhd',       group: 'youtuber', name: 'MKBHD',    hasPerson: true,  ref: 'references/mkbhd.jpg',             desc: '미니멀 테크형' },
-  { id: 'chimchakman', group: 'youtuber', name: '침착맨',   hasPerson: true,  ref: 'references/chimchakman.jpg',       desc: '예능 / 토크형' },
-  { id: 'panibottle1', group: 'youtuber', name: '빠니보틀', hasPerson: false, ref: 'references/panibottle_india.jpg',  desc: '여행 비교형' },
-  { id: 'panibottle2', group: 'youtuber', name: '빠니보틀', hasPerson: false, ref: 'references/panibottle_africa.jpg', desc: '여행 감성형' },
-  { id: 'tzuyang',     group: 'youtuber', name: '쯔양',     hasPerson: true,  ref: 'references/tzuyang.jpg',           desc: '먹방형' },
-];
+// ── 캔버스 기본 해상도 ──
+const W = 1280;
+const H = 720;
 
 // ── 상태 ──
-let uploadedImage      = null;
-let selectedTemplateId = null;
-let currentGroup       = 'basic';
-let placeholderImg     = null;
+let bgMode   = 'image';  // 'image' | 'color'
+let bgImage  = null;
+let bgColor  = '#B8860B';
 
-let foregroundImage = null;
-let fgX = 640, fgY = 36, fgH = 648;
-let isDraggingFg = false;
-let dragStartX = 0, dragStartY = 0, dragStartFgX = 0, dragStartFgY = 0;
+let personImage = null;
+let personX     = 960;   // 기본: 오른쪽
+let personY     = 0;
+let personH     = 720;   // 기본: 전체 높이
 
-// ── DOM 참조 ──
-const fileInput       = document.getElementById('file-input');
-const uploadZone      = document.getElementById('upload-zone');
-const uploadPreview   = document.getElementById('upload-preview');
-const previewImg      = document.getElementById('preview-img');
-const btnUpload       = document.getElementById('btn-upload');
-const btnChange       = document.getElementById('btn-change');
+let isDragging = false;
+let dragOffX = 0, dragOffY = 0;
 
-const fgFileInput     = document.getElementById('fg-file-input');
-const fgUploadSection = document.getElementById('fg-upload-section');
-const fgUploadZone    = document.getElementById('fg-upload-zone');
-const fgUploadPreview = document.getElementById('fg-upload-preview');
-const fgPreviewImg    = document.getElementById('fg-preview-img');
-const btnFgUpload     = document.getElementById('btn-fg-upload');
-const btnFgChange     = document.getElementById('btn-fg-change');
-const btnFgRemove     = document.getElementById('btn-fg-remove');
+let titleSize = 220;
 
-const templateGrid    = document.getElementById('template-grid');
-const canvas          = document.getElementById('preview-canvas');
-const inputTitle      = document.getElementById('input-title');
-const inputSubtitle   = document.getElementById('input-subtitle');
-const fgScaleGroup    = document.getElementById('fg-scale-group');
-const fgScaleSlider   = document.getElementById('fg-scale');
-const fgScaleVal      = document.getElementById('fg-scale-val');
+// ── DOM ──
+const canvas       = document.getElementById('canvas');
+const ctx          = canvas.getContext('2d');
 
-// ── 유틸 ──
-function showSection(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
+const bgFile       = document.getElementById('bg-file');
+const bgUploadZone = document.getElementById('bg-upload-zone');
+const bgPreview    = document.getElementById('bg-preview');
+const bgPreviewImg = document.getElementById('bg-preview-img');
+const btnBgUpload  = document.getElementById('btn-bg-upload');
+const btnBgChange  = document.getElementById('btn-bg-change');
 
+const bgColorInput = document.getElementById('bg-color');
+const bgColorVal   = document.getElementById('bg-color-val');
+
+const personFile       = document.getElementById('person-file');
+const personUploadZone = document.getElementById('person-upload-zone');
+const personPreview    = document.getElementById('person-preview');
+const personPreviewImg = document.getElementById('person-preview-img');
+const btnPersonUpload  = document.getElementById('btn-person-upload');
+const btnPersonChange  = document.getElementById('btn-person-change');
+const btnPersonRemove  = document.getElementById('btn-person-remove');
+const personControls   = document.getElementById('person-controls');
+const personSizeSlider = document.getElementById('person-size');
+const personSizeVal    = document.getElementById('person-size-val');
+
+const inputTitle    = document.getElementById('input-title');
+const inputSub      = document.getElementById('input-sub');
+const titleSizeSlider = document.getElementById('title-size');
+const titleSizeVal  = document.getElementById('title-size-val');
+
+// ── 이미지 로드 ──
 function loadImage(file) {
   return new Promise(resolve => {
     const img = new Image();
@@ -71,262 +56,32 @@ function loadImage(file) {
   });
 }
 
-// ── 플레이스홀더 이미지 생성 (기본 스타일 카드용) ──
-async function getPlaceholder() {
-  if (placeholderImg) return placeholderImg;
-  const c = document.createElement('canvas');
-  c.width = GRID_W; c.height = GRID_H;
-  const ctx = c.getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, GRID_W, GRID_H);
-  g.addColorStop(0, '#374151');
-  g.addColorStop(1, '#111827');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, GRID_W, GRID_H);
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => { placeholderImg = img; resolve(img); };
-    img.src = c.toDataURL();
-  });
-}
-
-// ── 템플릿 그리드 빌드 ──
-async function buildTemplateGrid(group) {
-  currentGroup = group;
+// ── 렌더 ──
+async function render() {
   await document.fonts.ready;
-  const ph = await getPlaceholder();
-  templateGrid.innerHTML = '';
+  ctx.clearRect(0, 0, W, H);
 
-  TEMPLATES.filter(t => t.group === group).forEach(t => {
-    const card = document.createElement('div');
-    card.className = 'template-card';
-    if (t.group === 'youtuber') card.classList.add('youtuber-card');
-    card.dataset.id = t.id;
-
-    if (t.group === 'youtuber') {
-      const img = document.createElement('img');
-      img.src = t.ref;
-      img.alt = t.name;
-      img.className = 'template-ref-img';
-      card.appendChild(img);
-    } else {
-      const c = document.createElement('canvas');
-      c.width = GRID_W; c.height = GRID_H;
-      renderTemplate(c, uploadedImage || ph, t.id, '메인 제목', '서브 타이틀');
-      card.appendChild(c);
-    }
-
-    const info = document.createElement('div');
-    info.className = 'template-info';
-    info.innerHTML = `<span class="template-name">${t.name}</span><span class="template-desc">${t.desc}</span>`;
-    card.appendChild(info);
-
-    if (selectedTemplateId === t.id) card.classList.add('selected');
-    card.addEventListener('click', () => selectTemplate(t.id));
-    templateGrid.appendChild(card);
-  });
-}
-
-// ── 템플릿 선택 ──
-function selectTemplate(id) {
-  selectedTemplateId = id;
-  const tmpl = TEMPLATES.find(t => t.id === id);
-
-  document.querySelectorAll('.template-card').forEach(c => {
-    c.classList.toggle('selected', c.dataset.id === id);
-  });
-
-  // 인물 이미지 섹션 표시/숨김
-  const showPerson = !tmpl || tmpl.hasPerson !== false;
-  if (showPerson) {
-    fgUploadSection.classList.remove('hidden');
+  // 1. 배경
+  if (bgMode === 'image' && bgImage) {
+    drawCover(ctx, bgImage, W, H);
   } else {
-    fgUploadSection.classList.add('hidden');
-    foregroundImage = null;
-    fgUploadZone.classList.remove('hidden');
-    fgUploadPreview.classList.add('hidden');
-    fgScaleGroup.classList.add('hidden');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, W, H);
   }
 
-  showSection('section-upload');
-  document.getElementById('section-upload').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  renderMainPreview();
-}
-
-// ── 배경 이미지 업로드 처리 ──
-async function handleFile(file) {
-  uploadedImage = await loadImage(file);
-  previewImg.src = URL.createObjectURL(file);
-  uploadZone.classList.add('hidden');
-  uploadPreview.classList.remove('hidden');
-
-  showSection('section-edit');
-  renderMainPreview();
-
-  // 기본 스타일 탭 카드 미리보기 실제 이미지로 갱신
-  if (currentGroup === 'basic') buildTemplateGrid('basic');
-
-  document.getElementById('section-edit').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ── 인물 이미지 업로드 처리 ──
-async function handleFgFile(file) {
-  foregroundImage = await loadImage(file);
-  fgPreviewImg.src = URL.createObjectURL(file);
-  fgUploadZone.classList.add('hidden');
-  fgUploadPreview.classList.remove('hidden');
-  fgScaleGroup.classList.remove('hidden');
-  renderMainPreview();
-}
-
-// ── 메인 캔버스 렌더 ──
-function renderMainPreview() {
-  if (!uploadedImage || !selectedTemplateId) return;
-  const title    = inputTitle.value    || '메인 제목을 입력하세요';
-  const subtitle = inputSubtitle.value || '';
-  renderTemplate(canvas, uploadedImage, selectedTemplateId, title, subtitle);
-}
-
-// ── 다운로드 ──
-function download(w, h) {
-  if (!uploadedImage || !selectedTemplateId) return;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const title    = inputTitle.value    || '메인 제목을 입력하세요';
-  const subtitle = inputSubtitle.value || '';
-  renderTemplate(c, uploadedImage, selectedTemplateId, title, subtitle);
-  c.toBlob(blob => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `thumbnail_${w}x${h}.png`;
-    a.click();
-  }, 'image/png');
-}
-
-// ═══════════════════════════════
-//  이벤트 리스너
-// ═══════════════════════════════
-
-// 템플릿 탭
-document.querySelectorAll('.template-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    buildTemplateGrid(tab.dataset.group);
-  });
-});
-
-// 배경 이미지
-btnUpload.addEventListener('click', () => fileInput.click());
-btnChange.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
-
-uploadZone.addEventListener('click', e => { if (e.target !== btnUpload) fileInput.click(); });
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('dragover');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
-
-// 인물 이미지
-btnFgUpload.addEventListener('click', () => fgFileInput.click());
-btnFgChange.addEventListener('click', () => fgFileInput.click());
-fgFileInput.addEventListener('change', e => { if (e.target.files[0]) handleFgFile(e.target.files[0]); });
-fgUploadZone.addEventListener('click', e => { if (e.target !== btnFgUpload) fgFileInput.click(); });
-btnFgRemove.addEventListener('click', () => {
-  foregroundImage = null;
-  fgPreviewImg.src = '';
-  fgUploadZone.classList.remove('hidden');
-  fgUploadPreview.classList.add('hidden');
-  fgScaleGroup.classList.add('hidden');
-  fgScaleSlider.value = 90;
-  fgScaleVal.textContent = '90%';
-  fgX = 640; fgY = 36; fgH = 648;
-  fgFileInput.value = '';
-  renderMainPreview();
-});
-
-// 텍스트 입력
-inputTitle.addEventListener('input', renderMainPreview);
-inputSubtitle.addEventListener('input', renderMainPreview);
-
-// 인물 크기 슬라이더
-fgScaleSlider.addEventListener('input', () => {
-  const pct = Number(fgScaleSlider.value);
-  fgScaleVal.textContent = pct + '%';
-  fgH = Math.round(PREVIEW_H * pct / 100);
-  renderMainPreview();
-});
-
-// 다운로드
-document.getElementById('btn-720').addEventListener('click',  () => download(1280, 720));
-document.getElementById('btn-1080').addEventListener('click', () => download(1920, 1080));
-
-// ═══════════════════════════════
-//  캔버스 인물 드래그
-// ═══════════════════════════════
-function isFgHit(px, py) {
-  if (!foregroundImage) return false;
-  const aspect = foregroundImage.width / foregroundImage.height;
-  const fgW = fgH * aspect;
-  return px >= fgX - fgW / 2 && px <= fgX + fgW / 2 && py >= fgY && py <= fgY + fgH;
-}
-
-function canvasCoords(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = PREVIEW_W / rect.width;
-  const scaleY = PREVIEW_H / rect.height;
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-}
-
-canvas.addEventListener('mousedown', e => {
-  const { x, y } = canvasCoords(e);
-  if (isFgHit(x, y)) {
-    isDraggingFg = true;
-    dragStartX = x; dragStartY = y;
-    dragStartFgX = fgX; dragStartFgY = fgY;
-    canvas.style.cursor = 'grabbing';
+  // 2. 인물 사진
+  if (personImage) {
+    const aspect = personImage.width / personImage.height;
+    const pH = personH;
+    const pW = pH * aspect;
+    ctx.drawImage(personImage, personX - pW / 2, personY, pW, pH);
   }
-});
-canvas.addEventListener('mousemove', e => {
-  const { x, y } = canvasCoords(e);
-  if (isDraggingFg) {
-    fgX = dragStartFgX + (x - dragStartX);
-    fgY = dragStartFgY + (y - dragStartY);
-    renderMainPreview();
-  } else {
-    canvas.style.cursor = isFgHit(x, y) ? 'grab' : 'default';
-  }
-});
-canvas.addEventListener('mouseup',    () => { isDraggingFg = false; canvas.style.cursor = 'default'; });
-canvas.addEventListener('mouseleave', () => { isDraggingFg = false; });
 
-canvas.addEventListener('touchstart', e => {
-  const { x, y } = canvasCoords(e);
-  if (isFgHit(x, y)) {
-    isDraggingFg = true;
-    dragStartX = x; dragStartY = y;
-    dragStartFgX = fgX; dragStartFgY = fgY;
-    e.preventDefault();
-  }
-}, { passive: false });
-canvas.addEventListener('touchmove', e => {
-  if (!isDraggingFg) return;
-  const { x, y } = canvasCoords(e);
-  fgX = dragStartFgX + (x - dragStartX);
-  fgY = dragStartFgY + (y - dragStartY);
-  renderMainPreview();
-  e.preventDefault();
-}, { passive: false });
-canvas.addEventListener('touchend', () => { isDraggingFg = false; });
+  // 3. 텍스트
+  drawText(ctx, W, H);
+}
 
-// ═══════════════════════════════
-//  공통 렌더 유틸
-// ═══════════════════════════════
-function drawImageCover(ctx, img, w, h) {
+function drawCover(ctx, img, w, h) {
   const ir = img.width / img.height;
   const cr = w / h;
   let sw, sh, sx, sy;
@@ -335,403 +90,271 @@ function drawImageCover(ctx, img, w, h) {
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
 }
 
-function drawForeground(ctx, w, h) {
-  if (!foregroundImage) return;
-  const scale     = h / PREVIEW_H;
-  const fgHScaled = fgH * scale;
-  const aspect    = foregroundImage.width / foregroundImage.height;
-  const fgWScaled = fgHScaled * aspect;
-  const fx = fgX * (w / PREVIEW_W) - fgWScaled / 2;
-  const fy = fgY * scale;
-  ctx.drawImage(foregroundImage, fx, fy, fgWScaled, fgHScaled);
-}
+function drawText(ctx, w, h) {
+  const s      = h / H;
+  const fs     = titleSize * s;
+  const lh     = fs * 1.05;
+  const margin = 40 * s;
+  const maxW   = w * 0.58;
 
-function computeLines(ctx, text, maxW) {
-  const lines = [];
-  text.split('\n').forEach(paragraph => {
-    const words = paragraph.split('');
-    let line = '';
-    for (const ch of words) {
-      const test = line + ch;
-      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = ch; }
-      else line = test;
-    }
-    if (line) lines.push(line);
-  });
-  return lines;
-}
-
-// ── 메인 렌더 디스패처 ──
-function renderTemplate(canvas, img, templateId, title, subtitle) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  drawImageCover(ctx, img, w, h);
-
-  switch (templateId) {
-    case 'overlay':     renderOverlay(ctx, w, h, title, subtitle);     break;
-    case 'dark':        renderDark(ctx, w, h, title, subtitle);        break;
-    case 'banner':      renderBanner(ctx, w, h, title, subtitle);      break;
-    case 'split':       renderSplit(ctx, w, h, title, subtitle);       break;
-    case 'impact':      renderImpact(ctx, w, h, title, subtitle);      break;
-    case 'neon':        renderNeon(ctx, w, h, title, subtitle);        break;
-    case 'mrbeast':     renderMrBeast(ctx, w, h, title, subtitle);     break;
-    case 'mkbhd':       renderMKBHD(ctx, w, h, title, subtitle);       break;
-    case 'chimchakman': renderChimchakman(ctx, w, h, title, subtitle); break;
-    case 'panibottle1': renderPanibottle1(ctx, w, h, title, subtitle); break;
-    case 'panibottle2': renderPanibottle2(ctx, w, h, title, subtitle); break;
-    case 'tzuyang':     renderTzuyang(ctx, w, h, title, subtitle);     break;
-  }
-
-  drawForeground(ctx, w, h);
-}
-
-// ═══════════════════════════════
-//  기본 스타일 렌더 함수 (6)
-// ═══════════════════════════════
-
-function renderOverlay(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  const grad = ctx.createLinearGradient(0, h * 0.45, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.85)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(64 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 8 * s;
-  const lines = computeLines(ctx, title, w * 0.85);
-  const lineH = 72 * s;
-  let y = h - (lines.length * lineH) - 48 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#cccccc';
-    ctx.fillText(subtitle, w / 2, h - 20 * s);
-  }
-  ctx.shadowBlur = 0;
-  ctx.textAlign = 'center';
-}
-
-function renderDark(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(72 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.9)';
-  ctx.shadowBlur = 12 * s;
-  const lines = computeLines(ctx, title, w * 0.8);
-  const lineH = 80 * s;
-  let y = h / 2 - (lines.length * lineH / 2) + 8 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText(subtitle, w / 2, h / 2 + (lines.length * lineH / 2) + 36 * s);
-  }
-  ctx.shadowBlur = 0;
-}
-
-function renderBanner(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  const bh = h * 0.28;
-  ctx.fillStyle = 'rgba(200,0,0,0.92)';
-  ctx.fillRect(0, h - bh, w, bh);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(58 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 6 * s;
-  const lines = computeLines(ctx, title, w * 0.88);
-  const lineH = 64 * s;
-  let y = h - bh + (bh / 2) - ((lines.length - 1) * lineH / 2) + 4 * s;
-  if (subtitle) y -= 16 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(24 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#ffcccc';
-    ctx.fillText(subtitle, w / 2, h - 14 * s);
-  }
-  ctx.shadowBlur = 0;
-}
-
-function renderSplit(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  const panelX = w * 0.52;
-  const grad = ctx.createLinearGradient(panelX, 0, w, 0);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(0.3, 'rgba(0,0,0,0.8)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.92)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'right';
-  ctx.font = `bold ${Math.round(60 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.7)';
-  ctx.shadowBlur = 8 * s;
-  const lines = computeLines(ctx, title, w * 0.42);
-  const lineH = 68 * s;
-  let y = h / 2 - ((lines.length - 1) * lineH / 2);
-  lines.forEach(l => { ctx.fillText(l, w - 36 * s, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(24 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#cccccc';
-    ctx.fillText(subtitle, w - 36 * s, h / 2 + (lines.length * lineH / 2) + 24 * s);
-  }
-  ctx.shadowBlur = 0;
-  ctx.textAlign = 'center';
-}
-
-function renderImpact(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  const topH = h * 0.18;
-  ctx.fillStyle = 'rgba(255,200,0,0.92)';
-  ctx.fillRect(0, 0, w, topH);
-
-  const grad = ctx.createLinearGradient(0, h * 0.6, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.88)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  if (subtitle) {
-    ctx.textAlign = 'center';
-    ctx.font = `700 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillText(subtitle, w / 2, topH / 2 + 10 * s);
-  }
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(68 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.9)';
-  ctx.shadowBlur = 10 * s;
-  const lines = computeLines(ctx, title, w * 0.85);
-  const lineH = 76 * s;
-  let y = h - (lines.length * lineH) - 32 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-  ctx.shadowBlur = 0;
-}
-
-function renderNeon(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(74 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.shadowColor = '#00ffcc';
-  ctx.shadowBlur = 32 * s;
-  ctx.fillStyle = '#00ffcc';
-  const lines = computeLines(ctx, title, w * 0.82);
-  const lineH = 82 * s;
-  let y = h / 2 - (lines.length * lineH / 2) + 8 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12 * s;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(subtitle, w / 2, h / 2 + (lines.length * lineH / 2) + 36 * s);
-  }
-  ctx.shadowBlur = 0;
-}
-
-// ═══════════════════════════════
-//  유튜버 스타일 렌더 함수 (6)
-// ═══════════════════════════════
-
-function renderMrBeast(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-
-  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.38);
-  topGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
-  topGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, w, h * 0.38);
-
-  const btmGrad = ctx.createLinearGradient(0, h * 0.6, 0, h);
-  btmGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  btmGrad.addColorStop(1, 'rgba(0,0,0,0.9)');
-  ctx.fillStyle = btmGrad;
-  ctx.fillRect(0, h * 0.6, w, h * 0.4);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(78 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffe135';
-  ctx.shadowColor = 'rgba(0,0,0,0.95)';
-  ctx.shadowBlur = 14 * s;
-  const lines = computeLines(ctx, title, w * 0.88);
-  const lineH = 84 * s;
-  let y = 88 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `700 ${Math.round(32 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 8 * s;
-    ctx.fillText(subtitle, w / 2, h - 28 * s);
-  }
-  ctx.shadowBlur = 0;
-}
-
-function renderMKBHD(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(70 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.7)';
-  ctx.shadowBlur = 10 * s;
-  const lines = computeLines(ctx, title, w * 0.75);
-  const lineH = 76 * s;
-  let y = h / 2 - ((lines.length - 1) * lineH / 2);
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#3b82f6';
-    ctx.shadowBlur = 6 * s;
-    ctx.fillText(subtitle, w / 2, h / 2 + (lines.length * lineH / 2) + 32 * s);
-  }
-  ctx.shadowBlur = 0;
-}
-
-function renderChimchakman(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-
-  const panelW = w * 0.82;
-  ctx.fillStyle = 'rgba(0,0,0,0.82)';
-  ctx.fillRect(0, 0, panelW, h);
-
-  const feather = ctx.createLinearGradient(panelW - 80 * s, 0, panelW + 20 * s, 0);
-  feather.addColorStop(0, 'rgba(0,0,0,0.82)');
-  feather.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = feather;
-  ctx.fillRect(panelW - 80 * s, 0, 100 * s, h);
-
+  // 메인 제목
+  ctx.font      = `900 ${fs}px 'Black Han Sans', sans-serif`;
   ctx.textAlign = 'left';
-  ctx.font = `bold ${Math.round(82 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.shadowBlur = 4 * s;
-  const lines = computeLines(ctx, title, panelW * 0.85);
-  const lineH = 90 * s;
-  let y = h / 2 - ((lines.length - 1) * lineH / 2);
-  lines.forEach(l => { ctx.fillText(l, 48 * s, y); y += lineH; });
+  ctx.textBaseline = 'top';
 
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText(subtitle, 48 * s, h / 2 + (lines.length * lineH / 2) + 28 * s);
+  const rawLines = (inputTitle.value || '메인 제목').split('\n');
+  const lines = [];
+  rawLines.forEach(line => {
+    const wrapped = wrapLine(ctx, line, maxW);
+    lines.push(...wrapped);
+  });
+
+  let y = margin * 0.8;
+  lines.forEach(line => {
+    drawOutlineText(ctx, line, margin, y, '#ffffff', '#000000', fs * 0.07);
+    y += lh;
+  });
+
+  // 서브 제목
+  if (inputSub.value.trim()) {
+    const subFs = fs * 0.38;
+    ctx.font = `900 ${subFs}px 'Black Han Sans', sans-serif`;
+    const subY = h - subFs * 1.4;
+    drawOutlineText(ctx, inputSub.value, margin, subY, '#ffffff', '#000000', subFs * 0.07);
   }
-  ctx.shadowBlur = 0;
-  ctx.textAlign = 'center';
 }
 
-function renderPanibottle1(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-
-  const grad = ctx.createLinearGradient(w * 0.4, 0, w, 0);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(0.5, 'rgba(0,0,0,0.75)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.92)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'right';
-  ctx.font = `bold ${Math.round(60 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ff9940';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 10 * s;
-  const lines = computeLines(ctx, title, w * 0.5);
-  const lineH = 68 * s;
-  let y = h / 2 - ((lines.length - 1) * lineH / 2);
-  lines.forEach(l => { ctx.fillText(l, w - 36 * s, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(24 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(subtitle, w - 36 * s, h / 2 + (lines.length * lineH / 2) + 28 * s);
+function wrapLine(ctx, text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const ch of text) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
   }
-  ctx.shadowBlur = 0;
-  ctx.textAlign = 'center';
+  if (line) lines.push(line);
+  return lines.length ? lines : [''];
 }
 
-function renderPanibottle2(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
-
-  const barH = h * 0.14;
-  ctx.fillStyle = 'rgba(0,0,0,0.92)';
-  ctx.fillRect(0, 0, w, barH);
-  ctx.fillRect(0, h - barH, w, barH);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(46 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#f5c842';
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 6 * s;
-  const lines = computeLines(ctx, title, w * 0.85);
-  const lineH = 52 * s;
-  let y = h - barH + (barH / 2) - ((lines.length - 1) * lineH / 2) + 4 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-
-  if (subtitle) {
-    ctx.font = `600 ${Math.round(22 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(subtitle, w / 2, barH / 2 + 10 * s);
-  }
-  ctx.shadowBlur = 0;
+function drawOutlineText(ctx, text, x, y, fill, stroke, lineW) {
+  ctx.lineJoin    = 'round';
+  ctx.lineWidth   = lineW * 2;
+  ctx.strokeStyle = stroke;
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fill;
+  ctx.fillText(text, x, y);
 }
 
-function renderTzuyang(ctx, w, h, title, subtitle) {
-  const s = h / PREVIEW_H;
+// ── 배경 탭 전환 ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    bgMode = tab.dataset.tab;
+    document.getElementById('bg-image-panel').classList.toggle('hidden', bgMode !== 'image');
+    document.getElementById('bg-color-panel').classList.toggle('hidden', bgMode !== 'color');
+    render();
+  });
+});
 
-  const badgeH = h * 0.16;
-  ctx.fillStyle = 'rgba(230,0,80,0.92)';
-  ctx.fillRect(0, 0, w, badgeH);
+// ── 배경 이미지 업로드 ──
+btnBgUpload.addEventListener('click', () => bgFile.click());
+btnBgChange.addEventListener('click', () => bgFile.click());
+bgUploadZone.addEventListener('click', e => { if (e.target !== btnBgUpload) bgFile.click(); });
+bgUploadZone.addEventListener('dragover', e => { e.preventDefault(); bgUploadZone.classList.add('dragover'); });
+bgUploadZone.addEventListener('dragleave', () => bgUploadZone.classList.remove('dragover'));
+bgUploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  bgUploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleBgFile(e.dataTransfer.files[0]);
+});
+bgFile.addEventListener('change', e => { if (e.target.files[0]) handleBgFile(e.target.files[0]); });
 
-  const grad = ctx.createLinearGradient(0, h * 0.55, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.88)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, h * 0.55, w, h * 0.45);
-
-  if (subtitle) {
-    ctx.textAlign = 'center';
-    ctx.font = `700 ${Math.round(28 * s)}px 'Noto Sans KR', sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(subtitle, w / 2, badgeH / 2 + 10 * s);
-  }
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.round(72 * s)}px 'Black Han Sans', sans-serif`;
-  ctx.fillStyle = '#ffe135';
-  ctx.shadowColor = 'rgba(0,0,0,0.95)';
-  ctx.shadowBlur = 14 * s;
-  const lines = computeLines(ctx, title, w * 0.88);
-  const lineH = 80 * s;
-  let y = h - (lines.length * lineH) - 24 * s;
-  lines.forEach(l => { ctx.fillText(l, w / 2, y); y += lineH; });
-  ctx.shadowBlur = 0;
+async function handleBgFile(file) {
+  bgImage = await loadImage(file);
+  bgPreviewImg.src = URL.createObjectURL(file);
+  bgUploadZone.classList.add('hidden');
+  bgPreview.classList.remove('hidden');
+  render();
 }
 
-// ── 초기 실행 ──
-buildTemplateGrid('basic');
+// ── 배경 색상 ──
+bgColorInput.addEventListener('input', () => {
+  bgColor = bgColorInput.value;
+  bgColorVal.textContent = bgColor.toUpperCase();
+  render();
+});
+
+// ── 인물 사진 업로드 ──
+btnPersonUpload.addEventListener('click', () => personFile.click());
+btnPersonChange.addEventListener('click', () => personFile.click());
+personUploadZone.addEventListener('click', e => { if (e.target !== btnPersonUpload) personFile.click(); });
+personFile.addEventListener('change', e => { if (e.target.files[0]) handlePersonFile(e.target.files[0]); });
+
+btnPersonRemove.addEventListener('click', () => {
+  personImage = null;
+  personPreview.classList.add('hidden');
+  personUploadZone.classList.remove('hidden');
+  personControls.style.display = 'none';
+  personFile.value = '';
+  render();
+});
+
+async function handlePersonFile(file) {
+  personImage = await loadImage(file);
+  personPreviewImg.src = URL.createObjectURL(file);
+  personUploadZone.classList.add('hidden');
+  personPreview.classList.remove('hidden');
+  personControls.style.display = 'flex';
+  // 기본 위치: 오른쪽, 전체 높이
+  personX = 960;
+  personY = 0;
+  personH = 720;
+  personSizeSlider.value = 100;
+  personSizeVal.textContent = '100%';
+  render();
+}
+
+// ── 인물 크기 슬라이더 ──
+personSizeSlider.addEventListener('input', () => {
+  const pct = Number(personSizeSlider.value);
+  personSizeVal.textContent = pct + '%';
+  personH = Math.round(H * pct / 100);
+  render();
+});
+
+// ── 텍스트 입력 ──
+inputTitle.addEventListener('input', render);
+inputSub.addEventListener('input', render);
+
+// ── 제목 크기 슬라이더 ──
+titleSizeSlider.addEventListener('input', () => {
+  titleSize = Number(titleSizeSlider.value);
+  titleSizeVal.textContent = titleSize;
+  render();
+});
+
+// ── 캔버스 드래그 (인물 이동) ──
+function canvasXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = W / rect.width;
+  const sy = H / rect.height;
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
+}
+
+function hitPerson(px, py) {
+  if (!personImage) return false;
+  const pW = personH * (personImage.width / personImage.height);
+  return px >= personX - pW / 2 && px <= personX + pW / 2
+      && py >= personY && py <= personY + personH;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const { x, y } = canvasXY(e);
+  if (hitPerson(x, y)) {
+    isDragging = true;
+    dragOffX = x - personX;
+    dragOffY = y - personY;
+    canvas.style.cursor = 'grabbing';
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  const { x, y } = canvasXY(e);
+  if (isDragging) {
+    personX = x - dragOffX;
+    personY = y - dragOffY;
+    render();
+  } else {
+    canvas.style.cursor = hitPerson(x, y) ? 'grab' : 'default';
+  }
+});
+canvas.addEventListener('mouseup',    () => { isDragging = false; canvas.style.cursor = 'default'; });
+canvas.addEventListener('mouseleave', () => { isDragging = false; });
+
+canvas.addEventListener('touchstart', e => {
+  const { x, y } = canvasXY(e);
+  if (hitPerson(x, y)) {
+    isDragging = true;
+    dragOffX = x - personX;
+    dragOffY = y - personY;
+    e.preventDefault();
+  }
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  if (!isDragging) return;
+  const { x, y } = canvasXY(e);
+  personX = x - dragOffX;
+  personY = y - dragOffY;
+  render();
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { isDragging = false; });
+
+// ── 다운로드 ──
+function download(w, h) {
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w;
+  offscreen.height = h;
+  const octx = offscreen.getContext('2d');
+
+  // 배경
+  if (bgMode === 'image' && bgImage) drawCover(octx, bgImage, w, h);
+  else { octx.fillStyle = bgColor; octx.fillRect(0, 0, w, h); }
+
+  // 인물
+  if (personImage) {
+    const scale = h / H;
+    const pH = personH * scale;
+    const pW = pH * (personImage.width / personImage.height);
+    const px = personX * (w / W) - pW / 2;
+    const py = personY * scale;
+    octx.drawImage(personImage, px, py, pW, pH);
+  }
+
+  // 텍스트
+  const s   = h / H;
+  const fs  = titleSize * s;
+  const lh  = fs * 1.05;
+  const mg  = 40 * s;
+  const mxW = w * 0.58;
+
+  octx.font         = `900 ${fs}px 'Black Han Sans', sans-serif`;
+  octx.textAlign    = 'left';
+  octx.textBaseline = 'top';
+
+  const rawLines = (inputTitle.value || '메인 제목').split('\n');
+  const lines = [];
+  rawLines.forEach(line => lines.push(...wrapLine(octx, line, mxW)));
+
+  let y = mg * 0.8;
+  lines.forEach(line => {
+    drawOutlineText(octx, line, mg, y, '#ffffff', '#000000', fs * 0.07);
+    y += lh;
+  });
+
+  if (inputSub.value.trim()) {
+    const subFs = fs * 0.38;
+    octx.font = `900 ${subFs}px 'Black Han Sans', sans-serif`;
+    const subY = h - subFs * 1.4;
+    drawOutlineText(octx, inputSub.value, mg, subY, '#ffffff', '#000000', subFs * 0.07);
+  }
+
+  offscreen.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `thumbnail_${w}x${h}.png`;
+    a.click();
+  }, 'image/png');
+}
+
+document.getElementById('btn-720').addEventListener('click',  () => download(1280, 720));
+document.getElementById('btn-1080').addEventListener('click', () => download(1920, 1080));
+
+// ── 초기 렌더 ──
+render();

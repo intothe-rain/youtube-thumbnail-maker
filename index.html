@@ -3,122 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube 썸네일 메이커</title>
+  <title>썸네일 메이커</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <header class="app-header">
-    <div class="logo">
-      <span class="logo-icon">▶</span>
-      <span class="logo-text">썸네일 메이커</span>
-    </div>
+    <span class="logo-icon">▶</span>
+    <span class="logo-text">썸네일 메이커</span>
   </header>
 
-  <main class="app-main">
+  <main class="app-layout">
 
-    <!-- Step 1: 스타일 선택 (처음부터 표시) -->
-    <section id="section-template" class="section">
-      <div class="section-label">01 스타일 선택</div>
-      <p class="section-desc">원하는 썸네일 스타일을 먼저 선택하세요</p>
-      <div class="template-tabs">
-        <button class="template-tab active" data-group="basic">기본 스타일</button>
-        <button class="template-tab" data-group="youtuber">유튜버 스타일</button>
-      </div>
-      <div id="template-grid" class="template-grid"></div>
-    </section>
+    <!-- 왼쪽: 컨트롤 패널 -->
+    <aside class="controls">
 
-    <!-- Step 2: 이미지 업로드 (스타일 선택 후 등장) -->
-    <section id="section-upload" class="section hidden">
-      <div class="section-label">02 이미지 업로드</div>
+      <!-- 배경 -->
+      <div class="ctrl-section">
+        <p class="ctrl-title">배경</p>
+        <div class="tab-row">
+          <button class="tab active" data-tab="image">이미지</button>
+          <button class="tab" data-tab="color">색상</button>
+        </div>
 
-      <div class="upload-group">
-        <p class="upload-group-label">배경 이미지</p>
-        <input type="file" id="file-input" accept="image/*" hidden>
-        <div id="upload-zone" class="upload-zone">
-          <div class="upload-icon">🖼️</div>
-          <p class="upload-title">이미지를 드래그하거나 클릭하여 업로드</p>
-          <p class="upload-sub">JPG, PNG, WEBP 지원</p>
-          <button id="btn-upload" class="btn btn-primary">파일 선택</button>
+        <div id="bg-image-panel">
+          <input type="file" id="bg-file" accept="image/*" hidden>
+          <div id="bg-upload-zone" class="upload-zone">
+            <span class="upload-icon">🖼️</span>
+            <p>클릭 또는 드래그</p>
+            <button class="btn btn-ghost btn-sm" id="btn-bg-upload">파일 선택</button>
+          </div>
+          <div id="bg-preview" class="img-preview hidden">
+            <img id="bg-preview-img" alt="배경">
+            <button class="btn btn-ghost btn-sm" id="btn-bg-change">변경</button>
+          </div>
         </div>
-        <div id="upload-preview" class="upload-preview hidden">
-          <img id="preview-img" src="" alt="업로드된 이미지">
-          <button id="btn-change" class="btn btn-ghost">이미지 변경</button>
-        </div>
-      </div>
 
-      <!-- 인물 이미지 (스타일에 따라 표시/숨김) -->
-      <div id="fg-upload-section" class="fg-section hidden">
-        <div class="fg-section-header">
-          <span class="fg-label">인물 이미지</span>
-          <span class="fg-badge">선택사항</span>
-        </div>
-        <p class="fg-notice">
-          배경이 제거된 투명 PNG(누끼)를 올리세요. 일반 사진은 배경 박스가 그대로 보입니다.<br>
-          무료 배경 제거 도구: <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer">remove.bg</a>
-        </p>
-        <input type="file" id="fg-file-input" accept="image/*" hidden>
-        <div id="fg-upload-zone" class="upload-zone fg-upload-zone">
-          <div class="upload-icon">🧍</div>
-          <p class="upload-title">인물 PNG 업로드</p>
-          <p class="upload-sub">투명 배경 PNG 권장</p>
-          <button id="btn-fg-upload" class="btn btn-ghost">파일 선택</button>
-        </div>
-        <div id="fg-upload-preview" class="upload-preview hidden">
-          <img id="fg-preview-img" src="" alt="인물 이미지">
-          <div style="display:flex;gap:8px;">
-            <button id="btn-fg-change" class="btn btn-ghost">변경</button>
-            <button id="btn-fg-remove" class="btn btn-ghost">제거</button>
+        <div id="bg-color-panel" class="hidden">
+          <div class="color-row">
+            <input type="color" id="bg-color" value="#B8860B" class="color-picker">
+            <span id="bg-color-val">#B8860B</span>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Step 3: 텍스트 편집 + 다운로드 (배경 업로드 후 등장) -->
-    <section id="section-edit" class="section hidden">
-      <div class="section-label">03 텍스트 편집 및 다운로드</div>
-      <div class="edit-layout">
-
-        <div class="inputs-panel">
-          <div class="input-group">
-            <label class="input-label" for="input-title">메인 제목</label>
-            <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목을 입력하세요"></textarea>
-          </div>
-          <div class="input-group">
-            <label class="input-label" for="input-subtitle">서브 제목</label>
-            <input type="text" id="input-subtitle" class="input-field" placeholder="서브 제목 (선택사항)">
-          </div>
-          <div id="fg-scale-group" class="input-group hidden">
-            <label class="input-label" for="fg-scale">인물 크기 <span id="fg-scale-val">90%</span></label>
-            <input type="range" id="fg-scale" class="fg-scale-slider" min="30" max="150" value="90">
-          </div>
-          <div class="download-section">
-            <p class="download-label">해상도 선택 후 다운로드</p>
-            <div class="download-btns">
-              <button id="btn-720" class="btn btn-download">
-                <span class="btn-res">720p</span>
-                <span class="btn-size">1280 × 720</span>
-              </button>
-              <button id="btn-1080" class="btn btn-download btn-hd">
-                <span class="btn-res">1080p</span>
-                <span class="btn-size">1920 × 1080</span>
-              </button>
-            </div>
+      <!-- 인물 사진 -->
+      <div class="ctrl-section">
+        <p class="ctrl-title">인물 사진</p>
+        <input type="file" id="person-file" accept="image/*" hidden>
+        <div id="person-upload-zone" class="upload-zone">
+          <span class="upload-icon">🧍</span>
+          <p>투명 PNG 권장</p>
+          <button class="btn btn-ghost btn-sm" id="btn-person-upload">파일 선택</button>
+        </div>
+        <div id="person-preview" class="img-preview hidden">
+          <img id="person-preview-img" alt="인물">
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" id="btn-person-change">변경</button>
+            <button class="btn btn-ghost btn-sm" id="btn-person-remove">제거</button>
           </div>
         </div>
-
-        <div class="preview-panel">
-          <p class="preview-label">미리보기</p>
-          <div class="canvas-wrap">
-            <canvas id="preview-canvas" width="1280" height="720"></canvas>
-          </div>
+        <div class="ctrl-sub" id="person-controls" style="display:none">
+          <label class="ctrl-label">크기 <span id="person-size-val">100%</span></label>
+          <input type="range" id="person-size" class="slider" min="30" max="180" value="100">
+          <p class="tip">캔버스에서 드래그로 위치 조정</p>
         </div>
-
       </div>
-    </section>
+
+      <!-- 텍스트 -->
+      <div class="ctrl-section">
+        <p class="ctrl-title">텍스트</p>
+        <div class="input-group">
+          <label class="ctrl-label">메인 제목</label>
+          <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목&#10;(줄바꿈 가능)"></textarea>
+        </div>
+        <div class="input-group">
+          <label class="ctrl-label">서브 제목</label>
+          <input type="text" id="input-sub" class="input-field" placeholder="서브 제목">
+        </div>
+        <div class="input-group">
+          <label class="ctrl-label">제목 크기 <span id="title-size-val">220</span>px</label>
+          <input type="range" id="title-size" class="slider" min="80" max="320" value="220">
+        </div>
+      </div>
+
+      <!-- 다운로드 -->
+      <div class="ctrl-section">
+        <p class="ctrl-title">다운로드</p>
+        <div class="btn-row">
+          <button class="btn btn-download" id="btn-720">
+            <span class="res">720p</span>
+            <span class="dim">1280×720</span>
+          </button>
+          <button class="btn btn-download btn-hd" id="btn-1080">
+            <span class="res">1080p</span>
+            <span class="dim">1920×1080</span>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- 오른쪽: 캔버스 미리보기 -->
+    <div class="preview-area">
+      <p class="preview-label">미리보기</p>
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1280" height="720"></canvas>
+      </div>
+    </div>
 
   </main>
 
