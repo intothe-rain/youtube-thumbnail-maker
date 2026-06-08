@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube 썸네일 메이커</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-icon">▶</span>
+      <span class="logo-text">썸네일 메이커</span>
+    </div>
+    <button id="btn-gallery" class="btn btn-gallery">📺 스타일 갤러리</button>
+  </header>
+
+  <!-- 스타일 갤러리 모달 -->
+  <div id="modal-gallery" class="modal-overlay">
+    <div class="modal-gallery-card">
+      <div class="gallery-header">
+        <h3 class="gallery-title">📺 스타일 갤러리</h3>
+        <button id="btn-gallery-close" class="btn-close">✕</button>
+      </div>
+
+      <div class="gallery-tabs">
+        <button class="gallery-tab active" data-cat="해외">🌍 해외 채널</button>
+        <button class="gallery-tab" data-cat="국내">🇰🇷 국내 채널</button>
+      </div>
+
+      <div class="gallery-body">
+        <div id="gallery-grid" class="gallery-grid"></div>
+
+        <div id="gallery-compare" class="gallery-compare hidden">
+          <div class="compare-header">
+            <span id="compare-label" class="compare-label"></span>
+            <button id="btn-compare-back" class="btn-back">← 목록으로</button>
+          </div>
+          <div class="compare-panels">
+            <div class="compare-panel">
+              <p class="compare-panel-label">참고 썸네일</p>
+              <img id="compare-ref" class="compare-img" src="" alt="참고 썸네일">
+            </div>
+            <div class="compare-panel">
+              <p class="compare-panel-label">내 작업</p>
+              <canvas id="compare-canvas" width="1280" height="720" class="compare-img"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="app-main">
+
+    <!-- Step 1: 이미지 업로드 -->
+    <section id="section-upload" class="section">
+      <div class="section-label">01 이미지 업로드</div>
+      <div id="upload-zone" class="upload-zone">
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <div class="upload-icon">🖼️</div>
+        <p class="upload-title">이미지를 드래그하거나 클릭하여 업로드</p>
+        <p class="upload-sub">JPG, PNG, WEBP 지원</p>
+        <button id="btn-upload" class="btn btn-primary">파일 선택</button>
+      </div>
+      <div id="upload-preview" class="upload-preview hidden">
+        <img id="preview-img" src="" alt="업로드된 이미지">
+        <button id="btn-change" class="btn btn-ghost">이미지 변경</button>
+      </div>
+    </section>
+
+    <!-- Step 2: 템플릿 선택 -->
+    <section id="section-template" class="section hidden">
+      <div class="section-label">02 템플릿 선택</div>
+      <p class="section-desc">마음에 드는 스타일을 선택하세요</p>
+      <div id="template-grid" class="template-grid"></div>
+    </section>
+
+    <!-- Step 3: 텍스트 편집 + 미리보기 -->
+    <section id="section-edit" class="section hidden">
+      <div class="section-label">03 텍스트 편집 및 다운로드</div>
+      <div class="edit-layout">
+
+        <div class="inputs-panel">
+          <div class="input-group">
+            <label class="input-label" for="input-title">메인 제목</label>
+            <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목을 입력하세요"></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="input-subtitle">서브 제목</label>
+            <input type="text" id="input-subtitle" class="input-field" placeholder="서브 제목 (선택사항)">
+          </div>
+          <div class="download-section">
+            <p class="download-label">해상도 선택 후 다운로드</p>
+            <div class="download-btns">
+              <button id="btn-720" class="btn btn-download">
+                <span class="btn-res">720p</span>
+                <span class="btn-size">1280 × 720</span>
+              </button>
+              <button id="btn-1080" class="btn btn-download btn-hd">
+                <span class="btn-res">1080p</span>
+                <span class="btn-size">1920 × 1080</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-panel">
+          <p class="preview-label">미리보기</p>
+          <div class="canvas-wrap">
+            <canvas id="preview-canvas" width="1280" height="720"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
