@@ -55,8 +55,8 @@ function init() {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
     person:  { ...d.person },
-    title:   { ...d.title,    text: '', color: '#ffffff', strokeWidth: 5,  strokeColor: '#000000' },
-    subtitle:{ ...d.subtitle, text: '', color: '#ffffff', strokeWidth: 3,  strokeColor: '#000000' },
+    title:   { ...d.title,    text: '', color: '#ffffff', strokeWidth: 5, strokeColor: '#000000', italic: d.title.italic    ?? false },
+    subtitle:{ ...d.subtitle, text: '', color: '#ffffff', strokeWidth: 3, strokeColor: '#000000', italic: d.subtitle.italic ?? false },
   };
 
   // UI 초기값 동기화
@@ -76,10 +76,12 @@ function init() {
   subSizeSlider.value       = state.subtitle.fontSize;
   subSizeVal.textContent    = state.subtitle.fontSize;
 
-  document.getElementById('title-stroke-size').value       = state.title.strokeWidth;
+  document.getElementById('title-stroke-size').value          = state.title.strokeWidth;
   document.getElementById('title-stroke-size-val').textContent = state.title.strokeWidth;
-  document.getElementById('sub-stroke-size').value         = state.subtitle.strokeWidth;
+  document.getElementById('sub-stroke-size').value             = state.subtitle.strokeWidth;
   document.getElementById('sub-stroke-size-val').textContent   = state.subtitle.strokeWidth;
+  document.getElementById('title-italic').checked = state.title.italic;
+  document.getElementById('sub-italic').checked   = state.subtitle.italic;
 
   render();
 }
@@ -108,7 +110,7 @@ function render() {
 
   // 3. 메인 제목
   {
-    const { x, y, fontSize, text, color, strokeWidth, strokeColor } = state.title;
+    const { x, y, fontSize, text, color, strokeWidth, strokeColor, italic } = state.title;
     const isPlaceholder = !text.trim();
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
     const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
@@ -118,17 +120,20 @@ function render() {
     ctx.textBaseline = 'top';
     const lines = computeLines(isPlaceholder ? '메인 제목' : text);
     const boxW  = Math.max(...lines.map(l => ctx.measureText(l).width), 200);
+    ctx.save();
+    if (italic) ctx.transform(1, 0, 0.25, 1, -y * 0.25, 0);
     let ly = y;
     lines.forEach(line => {
       drawOutline(ctx, line, x, ly, fill, stroke, lw);
       ly += fontSize * 1.05;
     });
     if (selected === 'title') drawSelectionBox(ctx, x, y, boxW, lines.length * fontSize * 1.05, '#ffffff');
+    ctx.restore();
   }
 
   // 4. 서브 제목
   {
-    const { x, y, fontSize, text, color, strokeWidth, strokeColor } = state.subtitle;
+    const { x, y, fontSize, text, color, strokeWidth, strokeColor, italic } = state.subtitle;
     const isPlaceholder = !text.trim();
     const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
     const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : strokeColor;
@@ -137,11 +142,14 @@ function render() {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const displayText = isPlaceholder ? '서브 제목' : text;
+    ctx.save();
+    if (italic) ctx.transform(1, 0, 0.25, 1, -y * 0.25, 0);
     drawOutline(ctx, displayText, x, y, fill, stroke, lw);
     if (selected === 'subtitle') {
       const tw = ctx.measureText(displayText).width;
       drawSelectionBox(ctx, x, y, Math.max(tw, 200), fontSize * 1.1, '#ffffff');
     }
+    ctx.restore();
   }
 
   ctx.restore();
@@ -422,6 +430,16 @@ document.getElementById('sub-stroke-color').addEventListener('input', e => {
   render();
 });
 
+document.getElementById('title-italic').addEventListener('change', e => {
+  state.title.italic = e.target.checked;
+  render();
+});
+
+document.getElementById('sub-italic').addEventListener('change', e => {
+  state.subtitle.italic = e.target.checked;
+  render();
+});
+
 // ── 다운로드 ──
 function download(w, h) {
   const off = document.createElement('canvas');
@@ -443,23 +461,31 @@ function download(w, h) {
   // 메인 제목
   {
     const fs = state.title.fontSize * sy;
+    const ty = state.title.y * sy;
     oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
     oc.textAlign = 'left'; oc.textBaseline = 'top';
     const text  = state.title.text.trim() || '메인 제목';
     const lines = computeLines(text);
-    let ly = state.title.y * sy;
+    oc.save();
+    if (state.title.italic) oc.transform(1, 0, 0.25, 1, -ty * 0.25, 0);
+    let ly = ty;
     lines.forEach(line => {
       drawOutline(oc, line, state.title.x * sx, ly, state.title.color, state.title.strokeColor, state.title.strokeWidth * sy);
       ly += fs * 1.05;
     });
+    oc.restore();
   }
 
   // 서브 제목
   if (state.subtitle.text.trim()) {
     const fs = state.subtitle.fontSize * sy;
+    const ty = state.subtitle.y * sy;
     oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
     oc.textAlign = 'left'; oc.textBaseline = 'top';
-    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, state.subtitle.y * sy, state.subtitle.color, state.subtitle.strokeColor, state.subtitle.strokeWidth * sy);
+    oc.save();
+    if (state.subtitle.italic) oc.transform(1, 0, 0.25, 1, -ty * 0.25, 0);
+    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, ty, state.subtitle.color, state.subtitle.strokeColor, state.subtitle.strokeWidth * sy);
+    oc.restore();
   }
 
   off.toBlob(blob => {

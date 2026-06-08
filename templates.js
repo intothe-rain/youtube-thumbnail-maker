@@ -11,8 +11,8 @@ const TEMPLATES = [
       bgMode: 'color',
       bgColor: '#B8860B',
       person: { x: 960, y: 0, h: 720 },
-      title: { x: 40, y: 28, fontSize: 220, maxW: 740 },
-      subtitle: { x: 40, y: 590, fontSize: 84 },
+      title:    { x: 40, y: 28,  fontSize: 220, italic: true },
+      subtitle: { x: 40, y: 590, fontSize: 84,  italic: true },
     },
   },
 ];
