@@ -5,12 +5,12 @@ const PREVIEW_W = 1280;
 const PREVIEW_H = 720;
 
 const TEMPLATES = [
-  { id: 'overlay', name: '풀 오버레이' },
-  { id: 'dark',    name: '다크 오버레이' },
-  { id: 'banner',  name: '배너' },
-  { id: 'split',   name: '분할' },
-  { id: 'impact',  name: '임팩트' },
-  { id: 'neon',    name: '네온 글로우' },
+  { id: 'mrbeast',     name: 'MrBeast 스타일' },
+  { id: 'mkbhd',       name: 'MKBHD 스타일' },
+  { id: 'chimchakman', name: '침착맨 스타일' },
+  { id: 'panibottle1', name: '여행 비교형' },
+  { id: 'panibottle2', name: '여행 감성형' },
+  { id: 'tzuyang',     name: '먹방형' },
 ];
 
 // ── 상태 ──
@@ -258,12 +258,12 @@ function renderTemplate(canvas, img, templateId, title, subtitle) {
   drawImageCover(ctx, img, w, h);
   drawForeground(ctx, w, h);
   switch (templateId) {
-    case 'overlay': renderOverlay(ctx, w, h, title, subtitle); break;
-    case 'dark':    renderDark(ctx, w, h, title, subtitle);    break;
-    case 'banner':  renderBanner(ctx, w, h, title, subtitle);  break;
-    case 'split':   renderSplit(ctx, w, h, title, subtitle);   break;
-    case 'impact':  renderImpact(ctx, w, h, title, subtitle);  break;
-    case 'neon':    renderNeon(ctx, w, h, title, subtitle);    break;
+    case 'mrbeast':     renderMrBeast(ctx, w, h, title, subtitle);     break;
+    case 'mkbhd':       renderMKBHD(ctx, w, h, title, subtitle);       break;
+    case 'chimchakman': renderChimchakman(ctx, w, h, title, subtitle); break;
+    case 'panibottle1': renderPanibottle1(ctx, w, h, title, subtitle); break;
+    case 'panibottle2': renderPanibottle2(ctx, w, h, title, subtitle); break;
+    case 'tzuyang':     renderTzuyang(ctx, w, h, title, subtitle);     break;
   }
 }
 
@@ -316,120 +316,162 @@ function drawTextBlock(ctx, text, cx, cy, maxWidth, fontSize, fillColor, strokeW
   return lines.length * lineHeight;
 }
 
-// ── 템플릿 1: 풀 오버레이 ──
-function renderOverlay(ctx, w, h, title, subtitle) {
-  const grad = ctx.createLinearGradient(0, h * 0.35, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.90)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  const subSize   = Math.round(w * 0.036);
-  const titleSize = Math.round(w * 0.072);
-
-  ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, w / 2, h * 0.76, w * 0.85, subSize, '#FFE234', Math.max(2, subSize * 0.1));
-
-  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, title, w / 2, h * 0.90, w * 0.85, titleSize, '#FFFFFF', Math.max(3, titleSize * 0.07));
-}
-
-// ── 템플릿 2: 다크 오버레이 ──
-function renderDark(ctx, w, h, title, subtitle) {
-  ctx.fillStyle = 'rgba(0,0,0,0.60)';
-  ctx.fillRect(0, 0, w, h);
-
-  const titleSize = Math.round(w * 0.072);
-  const subSize   = Math.round(w * 0.036);
-
-  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  const titleH = drawTextBlock(ctx, title, w / 2, h * 0.42, w * 0.80, titleSize, '#FFFFFF', Math.max(3, titleSize * 0.07));
-
-  ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, w / 2, h * 0.42 + titleH / 2 + subSize * 1.4, w * 0.80, subSize, '#7DD3FC', Math.max(2, subSize * 0.1));
-}
-
-// ── 템플릿 3: 배너 ──
-function renderBanner(ctx, w, h, title, subtitle) {
-  const bandH = h * 0.28;
-  const bandY = h - bandH;
-
-  ctx.fillStyle = 'rgba(190,10,10,0.93)';
-  ctx.fillRect(0, bandY, w, bandH);
-
-  const titleSize = Math.round(w * 0.065);
-  const subSize   = Math.round(w * 0.034);
-
-  ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, w / 2, bandY - subSize * 1.2, w * 0.85, subSize, '#FFE234', Math.max(2, subSize * 0.1));
-
-  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, title, w / 2, bandY + bandH / 2, w * 0.85, titleSize, '#FFFFFF', Math.max(2, titleSize * 0.05));
-}
-
-// ── 템플릿 4: 분할 ──
-function renderSplit(ctx, w, h, title, subtitle) {
-  const panelX = w * 0.52;
-  const panelW = w * 0.48;
-
-  ctx.fillStyle = 'rgba(10,12,50,0.88)';
-  ctx.fillRect(panelX, 0, panelW, h);
-
-  const titleSize = Math.round(w * 0.062);
-  const subSize   = Math.round(w * 0.034);
-  const cx        = panelX + panelW / 2;
-
-  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  const titleH = drawTextBlock(ctx, title, cx, h * 0.42, panelW * 0.85, titleSize, '#FFFFFF', Math.max(3, titleSize * 0.07));
-
-  ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, cx, h * 0.42 + titleH / 2 + subSize * 1.6, panelW * 0.85, subSize, '#FBBF24', Math.max(2, subSize * 0.1));
-}
-
-// ── 템플릿 5: 임팩트 ──
-function renderImpact(ctx, w, h, title, subtitle) {
-  const gradT = ctx.createLinearGradient(0, 0, 0, h * 0.55);
-  gradT.addColorStop(0, 'rgba(0,0,0,0.88)');
+// ── MrBeast 스타일: 상하 그라데이션 + 상단 초대형 노란 제목 ──
+function renderMrBeast(ctx, w, h, title, subtitle) {
+  const gradT = ctx.createLinearGradient(0, 0, 0, h * 0.52);
+  gradT.addColorStop(0, 'rgba(0,0,0,0.92)');
   gradT.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = gradT;
   ctx.fillRect(0, 0, w, h);
 
-  const gradB = ctx.createLinearGradient(0, h * 0.68, 0, h);
+  const gradB = ctx.createLinearGradient(0, h * 0.72, 0, h);
   gradB.addColorStop(0, 'rgba(0,0,0,0)');
-  gradB.addColorStop(1, 'rgba(0,0,0,0.80)');
+  gradB.addColorStop(1, 'rgba(0,0,0,0.85)');
   ctx.fillStyle = gradB;
   ctx.fillRect(0, 0, w, h);
 
-  const titleSize = Math.round(w * 0.086);
+  const titleSize = Math.round(w * 0.100);
   const subSize   = Math.round(w * 0.038);
 
   ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, title, w / 2, h * 0.22, w * 0.90, titleSize, '#FFE234', Math.max(4, titleSize * 0.08));
+  drawTextBlock(ctx, title, w / 2, h * 0.22, w * 0.92, titleSize, '#FFE234', Math.max(5, titleSize * 0.09));
 
   ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, w / 2, h * 0.89, w * 0.85, subSize, '#FFFFFF', Math.max(2, subSize * 0.1));
+  drawTextBlock(ctx, subtitle, w / 2, h * 0.90, w * 0.88, subSize, '#FFFFFF', Math.max(2, subSize * 0.1));
 }
 
-// ── 템플릿 6: 네온 글로우 ──
-function renderNeon(ctx, w, h, title, subtitle) {
-  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+// ── MKBHD 스타일: 미니멀 오버레이 + 깔끔한 중앙 텍스트 ──
+function renderMKBHD(ctx, w, h, title, subtitle) {
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
   ctx.fillRect(0, 0, w, h);
 
-  const titleSize = Math.round(w * 0.075);
-  const subSize   = Math.round(w * 0.036);
+  const titleSize = Math.round(w * 0.065);
+  const subSize   = Math.round(w * 0.032);
 
-  ctx.shadowColor = '#00f0ff';
-  ctx.shadowBlur  = Math.round(w * 0.02);
   ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
-  const titleH = drawTextBlock(ctx, title, w / 2, h * 0.42, w * 0.82, titleSize, '#FFFFFF', 0);
+  const titleH = drawTextBlock(ctx, title, w / 2, h * 0.44, w * 0.80, titleSize, '#FFFFFF', Math.max(2, titleSize * 0.04));
 
-  ctx.shadowColor = '#ff44cc';
-  ctx.shadowBlur  = Math.round(w * 0.012);
+  ctx.font = `600 ${subSize}px 'Noto Sans KR', sans-serif`;
+  drawTextBlock(ctx, subtitle, w / 2, h * 0.44 + titleH / 2 + subSize * 1.3, w * 0.70, subSize, '#60A5FA', 0);
+}
+
+// ── 침착맨 스타일: 좌측 다크 패널 + 좌정렬 초대형 한국어 텍스트 ──
+function renderChimchakman(ctx, w, h, title, subtitle) {
+  const panelW = w * 0.58;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.82)';
+  ctx.fillRect(0, 0, panelW * 0.82, h);
+
+  const edgeGrad = ctx.createLinearGradient(panelW * 0.80, 0, panelW, 0);
+  edgeGrad.addColorStop(0, 'rgba(0,0,0,0.82)');
+  edgeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = edgeGrad;
+  ctx.fillRect(panelW * 0.80, 0, panelW * 0.20, h);
+
+  const titleSize = Math.round(w * 0.095);
+  const subSize   = Math.round(w * 0.034);
+  const textX     = w * 0.06;
+  const maxW      = panelW * 0.80;
+
+  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
+  const lines  = computeLines(ctx, title, maxW);
+  const lineH  = titleSize * 1.25;
+  const totalH = lines.length * lineH;
+  const startY = h / 2 - totalH / 2 + titleSize * 0.78;
+
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin     = 'round';
+  ctx.lineWidth    = Math.max(5, titleSize * 0.09);
+  ctx.strokeStyle  = 'rgba(0,0,0,0.9)';
+  ctx.fillStyle    = '#FFFFFF';
+  lines.forEach((ln, i) => {
+    ctx.strokeText(ln, textX, startY + i * lineH);
+    ctx.fillText(ln, textX, startY + i * lineH);
+  });
+
+  ctx.font      = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
+  ctx.lineWidth = Math.max(2, subSize * 0.1);
+  ctx.fillStyle = '#FFE234';
+  const subY    = startY + totalH + subSize * 0.8;
+  ctx.strokeText(subtitle, textX, subY);
+  ctx.fillText(subtitle, textX, subY);
+
+  ctx.textAlign = 'center';
+}
+
+// ── 빠니보틀 여행 비교형: 우측 어두운 그라데이션 + 따뜻한 주황 제목 ──
+function renderPanibottle1(ctx, w, h, title, subtitle) {
+  const grad = ctx.createLinearGradient(w * 0.45, 0, w, 0);
+  grad.addColorStop(0, 'rgba(15,8,0,0)');
+  grad.addColorStop(1, 'rgba(15,8,0,0.82)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  const gradB = ctx.createLinearGradient(0, h * 0.72, 0, h);
+  gradB.addColorStop(0, 'rgba(0,0,0,0)');
+  gradB.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = gradB;
+  ctx.fillRect(0, 0, w, h);
+
+  const titleSize = Math.round(w * 0.072);
+  const subSize   = Math.round(w * 0.034);
+  const cx        = w * 0.76;
+  const maxW      = w * 0.46;
+
+  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
+  const titleH = drawTextBlock(ctx, title, cx, h * 0.42, maxW, titleSize, '#FFB347', Math.max(3, titleSize * 0.06));
+
   ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
-  drawTextBlock(ctx, subtitle, w / 2, h * 0.42 + titleH / 2 + subSize * 1.5, w * 0.82, subSize, '#ff99ee', 0);
+  drawTextBlock(ctx, subtitle, cx, h * 0.42 + titleH / 2 + subSize * 1.5, maxW, subSize, '#FFFFFF', Math.max(2, subSize * 0.1));
+}
 
-  ctx.shadowBlur  = 0;
-  ctx.shadowColor = 'transparent';
+// ── 빠니보틀 여행 감성형: 시네마틱 레터박스 + 하단 황금 제목 ──
+function renderPanibottle2(ctx, w, h, title, subtitle) {
+  ctx.fillStyle = 'rgba(0,0,0,0.88)';
+  ctx.fillRect(0, 0, w, h * 0.10);
+  ctx.fillRect(0, h * 0.90, w, h * 0.10);
+
+  const gradB = ctx.createLinearGradient(0, h * 0.52, 0, h * 0.90);
+  gradB.addColorStop(0, 'rgba(0,0,0,0)');
+  gradB.addColorStop(1, 'rgba(0,0,0,0.78)');
+  ctx.fillStyle = gradB;
+  ctx.fillRect(0, 0, w, h);
+
+  const subSize   = Math.round(w * 0.030);
+  const titleSize = Math.round(w * 0.064);
+
+  ctx.font = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
+  drawTextBlock(ctx, subtitle, w / 2, h * 0.74, w * 0.85, subSize, '#F59E0B', Math.max(2, subSize * 0.1));
+
+  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
+  drawTextBlock(ctx, title, w / 2, h * 0.84, w * 0.88, titleSize, '#FFFFFF', Math.max(3, titleSize * 0.06));
+}
+
+// ── 쯔양 먹방형: 핑크 상단 배지 + 하단 굵은 노란 제목 ──
+function renderTzuyang(ctx, w, h, title, subtitle) {
+  const badgeH = h * 0.13;
+  ctx.fillStyle = 'rgba(218,0,96,0.92)';
+  ctx.fillRect(0, 0, w, badgeH);
+
+  const gradB = ctx.createLinearGradient(0, h * 0.62, 0, h);
+  gradB.addColorStop(0, 'rgba(0,0,0,0)');
+  gradB.addColorStop(1, 'rgba(0,0,0,0.82)');
+  ctx.fillStyle = gradB;
+  ctx.fillRect(0, 0, w, h);
+
+  const subSize   = Math.round(w * 0.030);
+  const titleSize = Math.round(w * 0.085);
+
+  ctx.font         = `700 ${subSize}px 'Noto Sans KR', sans-serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#FFFFFF';
+  ctx.fillText(subtitle, w / 2, badgeH / 2);
+  ctx.textBaseline = 'alphabetic';
+
+  ctx.font = `900 ${titleSize}px 'Black Han Sans', 'Noto Sans KR', sans-serif`;
+  drawTextBlock(ctx, title, w / 2, h * 0.83, w * 0.90, titleSize, '#FFE234', Math.max(4, titleSize * 0.08));
 }
 
 // ── 유틸 ──
@@ -444,17 +486,17 @@ const GALLERY_DATA = [
   {
     category: '해외',
     items: [
-      { name: 'MrBeast', style: '도전 / 충격형',  file: 'references/mrbeast.jpg',           templateId: 'impact'  },
-      { name: 'MKBHD',   style: '미니멀 테크형',  file: 'references/mkbhd.jpg',             templateId: 'dark'    },
+      { name: 'MrBeast', style: '도전 / 충격형',  file: 'references/mrbeast.jpg',           templateId: 'mrbeast'     },
+      { name: 'MKBHD',   style: '미니멀 테크형',  file: 'references/mkbhd.jpg',             templateId: 'mkbhd'       },
     ]
   },
   {
     category: '국내',
     items: [
-      { name: '침착맨',   style: '예능 / 토크형',  file: 'references/chimchakman.jpg',       templateId: 'split'   },
-      { name: '빠니보틀', style: '여행 비교형',    file: 'references/panibottle_india.jpg',  templateId: 'overlay' },
-      { name: '빠니보틀', style: '여행 감성형',    file: 'references/panibottle_africa.jpg', templateId: 'banner'  },
-      { name: '쯔양',    style: '먹방형',          file: 'references/tzuyang.jpg',           templateId: 'neon'    },
+      { name: '침착맨',   style: '예능 / 토크형',  file: 'references/chimchakman.jpg',       templateId: 'chimchakman' },
+      { name: '빠니보틀', style: '여행 비교형',    file: 'references/panibottle_india.jpg',  templateId: 'panibottle1' },
+      { name: '빠니보틀', style: '여행 감성형',    file: 'references/panibottle_africa.jpg', templateId: 'panibottle2' },
+      { name: '쯔양',    style: '먹방형',          file: 'references/tzuyang.jpg',           templateId: 'tzuyang'     },
     ]
   }
 ];
