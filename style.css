@@ -104,6 +104,9 @@ body {
 .btn-size { font-size: 11px; color: var(--muted); font-weight: 400; }
 
 /* ── 업로드 영역 ── */
+.upload-group { display: flex; flex-direction: column; gap: 10px; }
+.upload-group-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+
 .upload-zone {
   border: 2px dashed var(--border);
   border-radius: var(--radius);
@@ -138,6 +141,26 @@ body {
   border-radius: 6px;
 }
 
+/* ── 템플릿 탭 ── */
+.template-tabs {
+  display: flex;
+  gap: 6px;
+}
+.template-tab {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-family: inherit;
+  transition: all .15s;
+}
+.template-tab:hover { background: var(--card); color: var(--text); }
+.template-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
 /* ── 템플릿 그리드 ── */
 .template-grid {
   display: grid;
@@ -159,13 +182,32 @@ body {
   height: auto;
   display: block;
 }
+
+/* 유튜버 스타일 카드 */
+.template-ref-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+}
+
+.template-info {
+  padding: 8px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .template-name {
   display: block;
   font-size: 12px;
   font-weight: 600;
   text-align: center;
-  padding: 8px 4px;
   color: var(--muted);
+}
+.template-desc {
+  font-size: 10px;
+  color: #555;
+  text-align: center;
 }
 .template-card.selected .template-name { color: var(--primary); }
 
@@ -224,168 +266,6 @@ body {
   display: block;
 }
 
-/* ── 반응형 ── */
-@media (max-width: 900px) {
-  .edit-layout {
-    grid-template-columns: 1fr;
-  }
-  .inputs-panel { order: 2; }
-  .preview-panel { order: 1; }
-}
-
-@media (max-width: 640px) {
-  .template-grid { grid-template-columns: repeat(2, 1fr); }
-  .app-main { padding: 24px 14px 60px; gap: 36px; }
-}
-
-/* ═══════════════════════════════
-   헤더 갤러리 버튼
-═══════════════════════════════ */
-.app-header { justify-content: space-between; }
-.btn-gallery {
-  background: transparent;
-  border: 1.5px solid var(--border);
-  color: var(--text);
-  font-size: 13px;
-  padding: 7px 14px;
-  border-radius: 8px;
-}
-.btn-gallery:hover { border-color: var(--primary); color: var(--primary); background: #1a0a0a; }
-
-/* ═══════════════════════════════
-   갤러리 모달
-═══════════════════════════════ */
-.modal-gallery-card {
-  background: var(--surface);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 900px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,.5);
-}
-
-.gallery-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.gallery-title { font-size: 17px; font-weight: 700; }
-.btn-close {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  cursor: pointer;
-  width: 32px; height: 32px;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-}
-.btn-close:hover { background: var(--card); color: var(--text); }
-
-.gallery-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.gallery-tab {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 7px 16px;
-  border-radius: 8px;
-  font-family: inherit;
-  transition: all .15s;
-}
-.gallery-tab:hover { background: var(--card); color: var(--text); }
-.gallery-tab.active { background: var(--primary); color: #fff; }
-
-.gallery-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 24px;
-}
-
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.gallery-item {
-  cursor: pointer;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 2px solid var(--border);
-  transition: border-color .15s, transform .15s;
-  background: var(--card);
-}
-.gallery-item:hover { border-color: #888; transform: translateY(-2px); }
-.gallery-item img {
-  width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  display: block;
-}
-.gallery-item-info {
-  padding: 8px 10px;
-}
-.gallery-item-name { font-size: 13px; font-weight: 700; }
-.gallery-item-style { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-/* ── 비교 뷰 ── */
-.gallery-compare.hidden { display: none; }
-.gallery-compare { display: flex; flex-direction: column; gap: 16px; }
-
-.compare-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.compare-label { font-size: 15px; font-weight: 700; }
-.btn-back {
-  background: none;
-  border: 1.5px solid var(--border);
-  color: var(--muted);
-  font-size: 13px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.btn-back:hover { background: var(--card); color: var(--text); }
-
-.compare-panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.compare-panel { display: flex; flex-direction: column; gap: 8px; }
-.compare-panel-label { font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; }
-.compare-img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  display: block;
-  border: 1px solid var(--border);
-}
-
-@media (max-width: 640px) {
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-  .compare-panels { grid-template-columns: 1fr; }
-  .modal-gallery-card { max-height: 95vh; border-radius: 12px; }
-}
-
 /* ═══════════════════════════════
    인물 이미지 업로드
 ═══════════════════════════════ */
@@ -419,6 +299,16 @@ body {
   height: 4px;
 }
 
-/* ── 갤러리 비교 버튼 그룹 ── */
-.compare-actions { display: flex; align-items: center; gap: 10px; }
-.btn-apply { font-size: 13px; padding: 8px 16px; }
+/* ── 반응형 ── */
+@media (max-width: 900px) {
+  .edit-layout {
+    grid-template-columns: 1fr;
+  }
+  .inputs-panel { order: 2; }
+  .preview-panel { order: 1; }
+}
+
+@media (max-width: 640px) {
+  .template-grid { grid-template-columns: repeat(2, 1fr); }
+  .app-main { padding: 24px 14px 60px; gap: 36px; }
+}

@@ -1,3 +1,9 @@
 .DS_Store
 Thumbs.db
 *.log
+node_modules/
+package.json
+package-lock.json
+test_flow.js
+test_upload.js
+test-results/
