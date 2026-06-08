@@ -79,12 +79,24 @@
           <textarea id="input-title" class="input-field" rows="3" placeholder="메인 제목&#10;(줄바꿈 가능)"></textarea>
           <label class="ctrl-label">크기 <span id="title-size-val">220</span>px</label>
           <input type="range" id="title-size" class="slider" min="60" max="320" value="220">
+          <label class="ctrl-label">텍스트 폭 <span id="title-width-val">740</span>px</label>
+          <input type="range" id="title-width" class="slider" min="100" max="1240" value="740">
+          <label class="ctrl-label">색상</label>
+          <div class="color-row">
+            <input type="color" id="title-color" class="color-picker" value="#ffffff">
+            <span id="title-color-val">#FFFFFF</span>
+          </div>
         </div>
         <div class="input-group" style="margin-top:12px">
           <label class="ctrl-label">서브 제목</label>
           <input type="text" id="input-sub" class="input-field" placeholder="서브 제목">
           <label class="ctrl-label">크기 <span id="sub-size-val">84</span>px</label>
           <input type="range" id="sub-size" class="slider" min="30" max="160" value="84">
+          <label class="ctrl-label">색상</label>
+          <div class="color-row">
+            <input type="color" id="sub-color" class="color-picker" value="#ffffff">
+            <span id="sub-color-val">#FFFFFF</span>
+          </div>
         </div>
         <p class="tip" style="margin-top:6px">캔버스에서 텍스트를 직접 드래그로 이동</p>
       </div>

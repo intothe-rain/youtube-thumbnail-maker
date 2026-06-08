@@ -55,8 +55,8 @@ function init() {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
     person:  { ...d.person },
-    title:   { ...d.title,    text: '' },
-    subtitle:{ ...d.subtitle, text: '' },
+    title:   { ...d.title,    text: '', color: '#ffffff' },
+    subtitle:{ ...d.subtitle, text: '', color: '#ffffff' },
   };
 
   // UI 초기값 동기화
@@ -75,6 +75,10 @@ function init() {
   titleSizeVal.textContent  = state.title.fontSize;
   subSizeSlider.value       = state.subtitle.fontSize;
   subSizeVal.textContent    = state.subtitle.fontSize;
+
+  const titleWidthSlider = document.getElementById('title-width');
+  const titleWidthVal    = document.getElementById('title-width-val');
+  if (titleWidthSlider) { titleWidthSlider.value = state.title.maxW; titleWidthVal.textContent = state.title.maxW; }
 
   render();
 }
@@ -103,41 +107,37 @@ function render() {
 
   // 3. 메인 제목
   {
-    const { x, y, fontSize, maxW, text } = state.title;
+    const { x, y, fontSize, maxW, text, color } = state.title;
     const isPlaceholder = !text.trim();
-    ctx.globalAlpha = isPlaceholder ? 0.38 : 1.0;
+    const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : '#000000';
     ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const lines = computeLines(ctx, isPlaceholder ? '메인 제목' : text, maxW);
     let ly = y;
     lines.forEach(line => {
-      drawOutline(ctx, line, x, ly, '#ffffff', '#000000', fontSize * 0.07);
+      drawOutline(ctx, line, x, ly, fill, stroke, fontSize * 0.04);
       ly += fontSize * 1.05;
     });
-    if (selected === 'title') {
-      ctx.globalAlpha = 1.0;
-      drawSelectionBox(ctx, x, y, maxW, lines.length * fontSize * 1.05, '#ffffff');
-    }
-    ctx.globalAlpha = 1.0;
+    if (selected === 'title') drawSelectionBox(ctx, x, y, maxW, lines.length * fontSize * 1.05, '#ffffff');
   }
 
   // 4. 서브 제목
   {
-    const { x, y, fontSize, text } = state.subtitle;
+    const { x, y, fontSize, text, color } = state.subtitle;
     const isPlaceholder = !text.trim();
-    ctx.globalAlpha = isPlaceholder ? 0.38 : 1.0;
+    const fill   = isPlaceholder ? 'rgba(255,255,255,0.55)' : color;
+    const stroke = isPlaceholder ? 'rgba(0,0,0,0.4)'        : '#000000';
     ctx.font = `900 ${fontSize}px 'Black Han Sans', sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const displayText = isPlaceholder ? '서브 제목' : text;
-    drawOutline(ctx, displayText, x, y, '#ffffff', '#000000', fontSize * 0.07);
+    drawOutline(ctx, displayText, x, y, fill, stroke, fontSize * 0.04);
     if (selected === 'subtitle') {
-      ctx.globalAlpha = 1.0;
       const tw = ctx.measureText(displayText).width;
       drawSelectionBox(ctx, x, y, Math.max(tw, 200), fontSize * 1.1, '#ffffff');
     }
-    ctx.globalAlpha = 1.0;
   }
 
   ctx.restore();
@@ -155,7 +155,7 @@ function drawCover(c, img, w, h) {
 
 function drawOutline(c, text, x, y, fill, stroke, lw) {
   c.lineJoin    = 'round';
-  c.lineWidth   = lw * 2;
+  c.lineWidth   = lw;
   c.strokeStyle = stroke;
   c.strokeText(text, x, y);
   c.fillStyle   = fill;
@@ -378,7 +378,7 @@ personSizeSlider.addEventListener('input', () => {
 inputTitle.addEventListener('input', () => { state.title.text = inputTitle.value; render(); });
 inputSub.addEventListener('input',   () => { state.subtitle.text = inputSub.value; render(); });
 
-// ── 크기 슬라이더 ──
+// ── 크기 / 폭 / 색상 슬라이더 ──
 titleSizeSlider.addEventListener('input', () => {
   state.title.fontSize = Number(titleSizeSlider.value);
   titleSizeVal.textContent = state.title.fontSize;
@@ -387,6 +387,24 @@ titleSizeSlider.addEventListener('input', () => {
 subSizeSlider.addEventListener('input', () => {
   state.subtitle.fontSize = Number(subSizeSlider.value);
   subSizeVal.textContent = state.subtitle.fontSize;
+  render();
+});
+
+document.getElementById('title-width').addEventListener('input', e => {
+  state.title.maxW = Number(e.target.value);
+  document.getElementById('title-width-val').textContent = e.target.value;
+  render();
+});
+
+document.getElementById('title-color').addEventListener('input', e => {
+  state.title.color = e.target.value;
+  document.getElementById('title-color-val').textContent = e.target.value.toUpperCase();
+  render();
+});
+
+document.getElementById('sub-color').addEventListener('input', e => {
+  state.subtitle.color = e.target.value;
+  document.getElementById('sub-color-val').textContent = e.target.value.toUpperCase();
   render();
 });
 
@@ -414,10 +432,11 @@ function download(w, h) {
     const maxW = state.title.maxW * sx;
     oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
     oc.textAlign = 'left'; oc.textBaseline = 'top';
-    const lines = computeLines(oc, state.title.text.trim() || '메인 제목', maxW);
+    const text  = state.title.text.trim() || '메인 제목';
+    const lines = computeLines(oc, text, maxW);
     let ly = state.title.y * sy;
     lines.forEach(line => {
-      drawOutline(oc, line, state.title.x * sx, ly, '#ffffff', '#000000', fs * 0.07);
+      drawOutline(oc, line, state.title.x * sx, ly, state.title.color, '#000000', fs * 0.04);
       ly += fs * 1.05;
     });
   }
@@ -427,7 +446,7 @@ function download(w, h) {
     const fs = state.subtitle.fontSize * sy;
     oc.font = `900 ${fs}px 'Black Han Sans', sans-serif`;
     oc.textAlign = 'left'; oc.textBaseline = 'top';
-    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, state.subtitle.y * sy, '#ffffff', '#000000', fs * 0.07);
+    drawOutline(oc, state.subtitle.text, state.subtitle.x * sx, state.subtitle.y * sy, state.subtitle.color, '#000000', fs * 0.04);
   }
 
   off.toBlob(blob => {
