@@ -5,3 +5,10 @@ test_rebuild.js
 test_text.html
 test_text.js
 *.log
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
