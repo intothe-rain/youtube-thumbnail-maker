@@ -5,12 +5,13 @@ const params   = new URLSearchParams(location.search);
 const tmplId   = params.get('id') || (TEMPLATES[0] && TEMPLATES[0].id);
 const template = TEMPLATES.find(t => t.id === tmplId) || TEMPLATES[0];
 
-let bgImage     = null;
-let personImage = null;
-let selected    = null;
-let isDragging  = false;
-let dragOffX    = 0, dragOffY = 0;
-let state       = null;
+let bgImage        = null;
+let personImage    = null;
+let selected       = null;
+let isDragging     = false;
+let dragOffX       = 0, dragOffY = 0;
+let state          = null;
+let customFontNames = new Set();
 
 // DOM
 const canvas    = document.getElementById('canvas');
@@ -51,7 +52,7 @@ function init() {
   state = {
     bgMode:  d.bgMode  || 'color',
     bgColor: d.bgColor || '#000000',
-    font:    d.font    || 'Noto Sans KR',
+    font:    d.font    || 'Black Han Sans',
     person:  { ...d.person },
     title:   { color: '#ffffff', strokeWidth: 14, strokeColor: '#000000', italic: false, text: '', ...d.title },
     subtitle:{ color: '#ffffff', strokeWidth: 6,  strokeColor: '#000000', italic: false, text: '', ...d.subtitle },
@@ -87,13 +88,16 @@ function init() {
   inputTitle.value = state.title.text;
   inputSub.value   = state.subtitle.text;
 
+  const fontSel = document.getElementById('font-select');
+  if (fontSel) fontSel.value = state.font;
+
   render();
   document.fonts.ready.then(() => render());
 }
 
 // ── 렌더링 유틸 ─────────────────────────────────────────
 function buildFont(size) {
-  const noWeight = ['Jua', 'Do Hyeon'];
+  const noWeight = ['Jua', 'Do Hyeon', 'Black Han Sans', ...customFontNames];
   if (noWeight.includes(state.font)) return `${size}px '${state.font}', sans-serif`;
   return `900 ${size}px '${state.font}', sans-serif`;
 }
@@ -299,6 +303,25 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', () => { isDragging = false; });
 
+// ── 캔버스 줌 ────────────────────────────────────────────
+let previewZoom = 1;
+const canvasWrap = document.querySelector('.canvas-wrap');
+
+canvasWrap.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  const dir = e.deltaY < 0 ? 1 : -1;
+  previewZoom = Math.max(0.3, Math.min(3, +(previewZoom + dir * 0.1).toFixed(1)));
+  canvas.style.transform = `scale(${previewZoom})`;
+  document.getElementById('zoom-val').textContent = Math.round(previewZoom * 100) + '%';
+}, { passive: false });
+
+canvasWrap.addEventListener('dblclick', () => {
+  previewZoom = 1;
+  canvas.style.transform = 'scale(1)';
+  document.getElementById('zoom-val').textContent = '100%';
+});
+
 // ── 배경 탭 ──────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -436,6 +459,45 @@ document.getElementById('title-italic').addEventListener('change', e => {
 document.getElementById('sub-italic').addEventListener('change', e => {
   state.subtitle.italic = e.target.checked;
   render();
+});
+
+// ── 폰트 ────────────────────────────────────────────────
+document.getElementById('font-select').addEventListener('change', e => {
+  state.font = e.target.value;
+  render();
+});
+
+document.getElementById('btn-font-upload').addEventListener('click', () => {
+  document.getElementById('font-file').click();
+});
+
+document.getElementById('font-file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const nameEl = document.getElementById('font-upload-name');
+  const fontName = file.name.replace(/\.[^.]+$/, '');
+  try {
+    const buf = await file.arrayBuffer();
+    const face = new FontFace(fontName, buf);
+    await face.load();
+    document.fonts.add(face);
+    customFontNames.add(fontName);
+
+    const sel = document.getElementById('font-select');
+    const exists = [...sel.options].some(o => o.value === fontName);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = fontName;
+      opt.textContent = fontName + ' (내 폰트)';
+      sel.appendChild(opt);
+    }
+    sel.value = fontName;
+    state.font = fontName;
+    nameEl.textContent = '✓ ' + file.name;
+    render();
+  } catch {
+    nameEl.textContent = '로드 실패';
+  }
 });
 
 // ── 다운로드 ────────────────────────────────────────────

@@ -7,10 +7,10 @@ const TEMPLATES = [
     defaults: {
       bgMode:  'color',
       bgColor: '#B8860B',
-      font:    'Jua',
+      font:    'Black Han Sans',
       person:  { x: 960, y: 0, h: 720 },
-      title:    { x: 40, y: 28,  fontSize: 220, italic: true, text: '침착맨\n삼국지', color: '#ffffff', strokeWidth: 14, strokeColor: '#000000' },
-      subtitle: { x: 40, y: 590, fontSize: 84,  italic: true, text: '통합본',         color: '#ffffff', strokeWidth: 6,  strokeColor: '#000000' },
+      title:    { x: 40, y: 28,  fontSize: 160, italic: true, text: '침착맨\n삼국지', color: '#ffffff', strokeWidth: 12, strokeColor: '#000000' },
+      subtitle: { x: 40, y: 560, fontSize: 68,  italic: true, text: '통합본',         color: '#ffffff', strokeWidth: 6,  strokeColor: '#000000' },
     },
   },
 ];
